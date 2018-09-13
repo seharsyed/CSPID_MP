@@ -1,0 +1,8 @@
+/* This is going to contain test data*/
+
+/*The first step is to read the data which is going to be used as coefficient
+matrix in sparse format*/
+
+/*Need routine to convert it to COO format*/
+
+/*Generate random matrix B and load the same in MATLAB for debugging*/

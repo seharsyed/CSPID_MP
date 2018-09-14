@@ -1,1 +1,86 @@
-library links
+#
+# Makefile.in
+#
+ 
+#-----------------------------------------------------------------------------
+# Shell
+#-----------------------------------------------------------------------------
+
+SHELL = /bin/sh
+
+#-----------------------------------------------------------------------------
+# Platform
+#-----------------------------------------------------------------------------
+
+PLAT = LINUX
+
+#-----------------------------------------------------------------------------
+# Compilers:
+#-----------------------------------------------------------------------------
+
+CC = gcc
+FC = gfortran
+LOADER = $(FC)
+
+
+#-----------------------------------------------------------------------------
+# Libraries
+#-----------------------------------------------------------------------------
+
+#I have added the path to the static libaries, will resolve the dynamic library 
+#linking issue later. 
+ 
+BLLIB        = /usr/local/lib/libblas.a
+CBLIB        = /usr/local/lib/libcblas.a
+LAPACKLIB    = /usr/local/lib/liblapack.a
+TMGLIB       = /usr/local/lib/libtmglib.a
+LAPACKELIB   = /usr/local/lib/liblapacke.a
+
+
+#----------------------------------------------------------------------------
+#Include files (Header files)
+#----------------------------------------------------------------------------
+
+INCLUDES = /usr/local/include
+
+#-----------------------------------------------------------------------------
+# Flags for Compilers
+#-----------------------------------------------------------------------------
+
+CFLAGS = -O3 -DADD_
+FFLAGS = -O3 -pipe -c 
+
+#-----------------------------------------------------------------------------
+# Archive programs and flags
+#-----------------------------------------------------------------------------
+
+ARCH = ar
+ARCHFLAGS = cr
+RANLIB = ranlib
+
+dlvl = ./.
+
+#---------------------------------------------------------------------------
+#CSPID compilation
+#-------------------------------------------------------------------------
+
+
+
+all:	cspid
+
+LIBRARIES =	 $(LAPACKELIB) $(LAPACKLIB) $(CBLIB) $(BLLIB);
+
+example1: 
+	$(CC) -c $(CFLAGS) -I$(INCLUDES) cspid.c
+	$(LOADER) -o xspid cspid.o $(LIBRARIES)
+
+
+  #Here spex is the executable file
+
+clean:	cleanobj cleanexe;
+cleanobj:
+		rm -f *.o
+cleanexe:
+		rm -f x*
+
+

@@ -71,11 +71,14 @@ int main (int arg, char** args)
         //printf("Retrieved line of length %zu :\n", read);
         //printf("%s\n", line);
         char* split = strsep(&line, " ") ;
-        printf("%s\t", split);
+        float val = atof(split);
+        printf("%f\t", val);
         split = strsep(&line, " ") ;
-        printf("%s\t", split);
+        val = atof(split);
+        printf("%f\t", val);
         split = strsep(&line, " ") ;
-        printf("%s\t\n", split);
+        val = atof(split);
+        printf("%f\n", val);
         
     }
     

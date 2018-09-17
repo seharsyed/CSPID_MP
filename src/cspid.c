@@ -9,7 +9,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <string.h>
+#include <stddef.h>
 //Testing the first routine "Hello CSPID"//
 
 int main (int arg, char** args)
@@ -55,11 +56,37 @@ int main (int arg, char** args)
     if (fp == NULL)
         exit(0);
     
+//    int r = 3, c = 3, i=0, j, count;
+//
+//    float *arr[r];
+//    for (i=0; i<r; i++)
+//        arr[i] = (float *)malloc(c * sizeof(float));
+//
+//
+//    for(i = 0; i < r; i++)
+//        arr[i] = (*arr + c * i);
+    //char* split = NULL;
+    int i=0, j=0;
     while ((read = getline(&line, &len, fp)) != -1) {
         //printf("Retrieved line of length %zu :\n", read);
-        printf("%s", line);
+        //printf("%s\n", line);
+        char* split = strsep(&line, " ") ;
+        printf("%s\t", split);
+        split = strsep(&line, " ") ;
+        printf("%s\t", split);
+        split = strsep(&line, " ") ;
+        printf("%s\t\n", split);
+        
     }
     
+//
+//    for (i = 0; i <  r; i++){
+//        for (j = 0; j < c; j++){
+//            printf("%f \t ",arr[i][j]);
+//        }
+//        printf("\n");
+//    }
+//    free(arr);
     fclose(fp);
     if (line)
         free(line);

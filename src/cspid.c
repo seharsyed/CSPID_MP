@@ -16,15 +16,15 @@
 int main (int arg, char** args)
 {
 
-    //printf("%s :\n\n\n",args[1]);
-//FILE *fpointer;
+    printf("%s :\n\n\n",args[1]);
+FILE *fpointer;
 
-//fpointer = fopen("output.txt", "w");
+fpointer = fopen("newoutput.txt", "w");
 //This is writing to an output file//
 
-//fprintf(fpointer, "Hello CSPID\n");
-
-//fclose(fpointer);
+fprintf(fpointer, "Hello CSPID\n");
+fprintf(fpointer,"This is testing the 2nd line on output file\n");
+fclose(fpointer);
 
 
 /*********************************
@@ -49,7 +49,7 @@ int main (int arg, char** args)
     size_t len = 0;
     ssize_t read;
     if(arg <2){
-        printf("Missing File name\n");
+        printf("Missing input File name\n");
         return 0;
     }
     fp = fopen(args[1], "r");

@@ -47,8 +47,8 @@ INCLUDES = /usr/local/include
 # Flags for Compilers
 #-----------------------------------------------------------------------------
 
-CFLAGS = -O3 -DADD_
-FFLAGS = -O3 -pipe -c 
+CFLAGS = -O3
+FFLAGS = -O3  
 
 #-----------------------------------------------------------------------------
 # Archive programs and flags
@@ -75,8 +75,8 @@ example1:
 	$(LOADER) -o xspid cspid.o $(LIBRARIES)
 
 
-  #Here spex is the executable file
-
+  #Here xspid is the executable file
+ 
 clean:	cleanobj cleanexe;
 cleanobj:
 		rm -f *.o

@@ -1,2 +1,0 @@
-Hello CSPID
-This is testing the 2nd line on output file

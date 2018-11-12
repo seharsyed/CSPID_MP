@@ -3,98 +3,102 @@
  *************************************
  Author:  Sehar Naveed
  Institute:  Unibz
- Date: September 14, 2018
+ Date: November 12, 2018
 ***************************************/
-
+/*Implementation of Block Arnoldi*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
-//Testing the first routine "Hello CSPID"//
+#include "mmio.h"
 
-int main (int arg, char** args)
+
+
+/* Reading the Matrix from MM. The matrix is in COO Format*/
+
+
+int main(int argc, char *argv[])
 {
+    int ret_code;
+    MM_typecode matcode;
+    FILE *f;
+    int M, N, nz;
+    int i, *I, *J;
+    double *val;
 
-    printf("%s :\n\n\n",args[1]);
-FILE *fpointer;
+    if (argc < 2)
+	{
+		fprintf(stderr, "Usage: %s [martix-market-filename]\n", argv[0]);
+		exit(1);
+	}
+    else
+    {
+        if ((f = fopen(argv[1], "r")) == NULL)
+            exit(1);
+    }
 
-fpointer = fopen("newoutput.txt", "w");
-//This is writing to an output file//
+    if (mm_read_banner(f, &matcode) != 0)
+    {
+        printf("Could not process Matrix Market banner.\n");
+        exit(1);
+    }
 
-fprintf(fpointer, "Hello CSPID\n");
-fprintf(fpointer,"This is testing the 2nd line on output file\n");
-fclose(fpointer);
+
+    /*  This is how one can screen matrix types if their application */
+    /*  only supports a subset of the Matrix Market data types.      */
+
+    if (mm_is_complex(matcode) && mm_is_matrix(matcode) &&
+            mm_is_sparse(matcode) )
+    {
+        printf("Sorry, this application does not support ");
+        printf("Market Market type: [%s]\n", mm_typecode_to_str(matcode));
+        exit(1);
+    }
+
+    /* find out size of sparse matrix .... */
+
+    if ((ret_code = mm_read_mtx_crd_size(f, &M, &N, &nz)) !=0)
+        exit(1);
+
+
+    /* reseve memory for matrices */
+
+    I = (int *) malloc(nz * sizeof(int));
+    J = (int *) malloc(nz * sizeof(int));
+    val = (double *) malloc(nz * sizeof(double));
+
+
+    /* NOTE: when reading in doubles, ANSI C requires the use of the "l"  */
+    /*   specifier as in "%lg", "%lf", "%le", otherwise errors will occur */
+    /*  (ANSI C X3.159-1989, Sec. 4.9.6.2, p. 136 lines 13-15)            */
+
+    for (i=0; i<nz; i++)
+    {
+        fscanf(f, "%d %d %le\n", &I[i], &J[i], &val[i]);
+        I[i]--;  /* adjust from 1-based to 0-based */
+        J[i]--;
+    }
+
+    if (f !=stdin) fclose(f);
+
+    /************************/
+    /* now write out matrix */
+    /************************/
+
+    mm_write_banner(stdout, matcode);
+    mm_write_mtx_crd_size(stdout, M, N, nz);
+    for (i=0; i<nz; i++)
+        fprintf(stdout, "%d %d %1.6e\n", I[i]+1, J[i]+1, val[i]);
+
+	return 0;
+}
 
 
 /*********************************
- * TODO
+ * TODO  November 13 
 *********************************/
 
-/*I need to read data from a file
- 
-  The format should be 
-  1) open input file
-  2) get the size of the matrix
-  3) Allocate the memory to the array
-  4) Read data */
-    
-    
-    /**
-     File Reading
-     **/
-    
-    FILE * fp;
-    char * line = NULL;
-    size_t len = 0;
-    ssize_t read;
-    if(arg <2){
-        printf("Missing input File name\n");
-        return 0;
-    }
-    fp = fopen(args[1], "r");
-    if (fp == NULL)
-        exit(0);
-    
-//    int r = 3, c = 3, i=0, j, count;
-//
-//    float *arr[r];
-//    for (i=0; i<r; i++)
-//        arr[i] = (float *)malloc(c * sizeof(float));
-//
-//
-//    for(i = 0; i < r; i++)
-//        arr[i] = (*arr + c * i);
-    //char* split = NULL;
-    int i=0, j=0;
-    while ((read = getline(&line, &len, fp)) != -1) {
-        //printf("Retrieved line of length %zu :\n", read);
-        //printf("%s\n", line);
-        char* split = strsep(&line, " ") ;
-        float val = atof(split);
-        printf("%f\t", val);
-        split = strsep(&line, " ") ;
-        val = atof(split);
-        printf("%f\t", val);
-        split = strsep(&line, " ") ;
-        val = atof(split);
-        printf("%f\n", val);
-        
-    }
-    
-//
-//    for (i = 0; i <  r; i++){
-//        for (j = 0; j < c; j++){
-//            printf("%f \t ",arr[i][j]);
-//        }
-//        printf("\n");
-//    }
-//    free(arr);
-    fclose(fp);
-    if (line)
-        free(line);
-    exit(0);
-  
-return 0;
-
-}
+/*1. Change the Format to CSR.
+  2. Creat a Random matrix B in Matlab/C and allocate the values to array. 
+  3. Compute Norm */ 

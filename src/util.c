@@ -185,6 +185,7 @@ int mm_write_mtx_crd_size(FILE *f, int M, int N, int nz)
         return 0;
 }
 
+
 int mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz )
 {
     char line[MM_MAX_LINE_LENGTH];
@@ -508,3 +509,69 @@ char  *mm_typecode_to_str(MM_typecode matcode)
     return mm_strdup(buffer);
 
 }
+
+
+/***********************************************************************
+    converts COO format to CSR format, in-place,
+   if SORT_IN_ROW is defined, each row is sorted in column index.
+   On return, i_idx contains row_start position
+   *********************************************************************/
+
+void coo2csr_in(int n, int nz, double *a, int *i_idx, int *j_idx)
+{
+  int *row_start;
+  int i, j;
+  int init, i_next, j_next, i_pos;
+  double dt, a_next;
+
+  row_start = (int *)malloc((n+1)*sizeof(int));
+  if (!row_start){
+    printf ("coo2csr_in: cannot allocate temporary memory\n");
+    exit (1);
+  }
+  for (i=0; i<=n; i++) row_start[i] = 0;
+
+  /* determine row lengths */
+  for (i=0; i<nz; i++) row_start[i_idx[i]+1]++;
+
+  for (i=0; i<n; i++) row_start[i+1] += row_start[i];
+
+  for (init=0; init<nz; ){
+    dt = a[init];
+    i = i_idx[init];
+    j = j_idx[init];
+    i_idx[init] = -1;
+    while (1){
+      i_pos = row_start[i];
+      a_next = a[i_pos];
+      i_next = i_idx[i_pos];
+      j_next = j_idx[i_pos];
+
+      a[i_pos] = dt;
+      j_idx[i_pos] = j;
+      i_idx[i_pos] = -1;
+      row_start[i]++;
+      if (i_next < 0) break;
+      dt = a_next;
+      i = i_next;
+      j = j_next;
+
+    }
+    init++;
+    while ((i_idx[init] < 0) && (init < nz))  init++;
+  }
+
+
+  /* shift back row_start */
+  for (i=0; i<n; i++) i_idx[i+1] = row_start[i];
+  i_idx[0] = 0;
+
+
+  for (i=0; i<n; i++){
+    qsort (j_idx, a, i_idx[i], i_idx[i+1]);
+  }
+
+}
+
+
+

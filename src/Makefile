@@ -41,13 +41,13 @@ LAPACKELIB   = /usr/local/lib/liblapacke.a
 #Include files (Header files)
 #----------------------------------------------------------------------------
 
-INCLUDES = /usr/local/include
+INCLUDES = ../include
 
 #-----------------------------------------------------------------------------
 # Flags for Compilers
 #-----------------------------------------------------------------------------
 
-CFLAGS = -O3
+CFLAGS = -Wall
 FFLAGS = -O3  
 
 #-----------------------------------------------------------------------------
@@ -56,31 +56,35 @@ FFLAGS = -O3
 
 ARCH = ar
 ARCHFLAGS = cr
-RANLIB = ranlib
+RANLIB = ranlibi
 
 dlvl = ./.
+
+#--------------------------------------------------------------------------
+#Object Files
+#--------------------------------------------------------------------------
+OBJFILES = cspid.o 
+TARGET = cspid
+RM = rm -f
+
 
 #---------------------------------------------------------------------------
 #CSPID compilation
 #-------------------------------------------------------------------------
 
+COMMON_DEPS=mmio.c mmio.h clock.h coo.h
 
-
-all:	cspid
+all: $(TARGET)
 
 LIBRARIES =	 $(LAPACKELIB) $(LAPACKLIB) $(CBLIB) $(BLLIB);
 
-example1: 
+test: 
 	$(CC) -c $(CFLAGS) -I$(INCLUDES) cspid.c
-	$(LOADER) -o xspid cspid.o $(LIBRARIES)
-
-
-  #Here xspid is the executable file
+	 $(LIBRARIES)
  
-clean:	cleanobj cleanexe;
+clean: 
 cleanobj:
 		rm -f *.o
-cleanexe:
-		rm -f x*
+
 
 

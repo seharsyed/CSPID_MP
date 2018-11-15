@@ -11,129 +11,108 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+
 #include "mmio.h"
+#include "clock.h"
+#include "coo.h"
+#include "csr.h"
 
+/* Reading the Matrix from MM. The matrix is in CSR Format*/
 
+unsigned int iterations=1000;
 
-/* Reading the Matrix from MM. The matrix is in COO Format*/
-
+void parse_args(int argc, char *argv[]);
+void print_vector(char* pre, double *v, unsigned int size);
 
 int main(int argc, char *argv[])
 {
+    unsigned int i;
+    int sym;
     int ret_code;
+    CSR_Matrix csr;
+    //COO_Matrix coo;//
+    //int sym1;//
+    Clock clock;
     MM_typecode matcode;
-    FILE *f;
+    char* filename;
+    double *x;
+    double *y;
+    FILE *f;       //This file is used for reading RHS//
     int M, N, nz;
-    int i, *I, *J, k, j;
+    int *I, *J, k, j;
     double *val;
 
-    if (argc < 2)
-	{
-		fprintf(stderr, "Usage: %s [martix-market-filename]\n", argv[0]);
-		exit(1);
-	}
-    else
-    {
-        if ((f = fopen(argv[1], "r")) == NULL)
-            exit(1);
-    }
+parse_args(argc, argv);
 
-    if (mm_read_banner(f, &matcode) != 0)
-    {
-        printf("Could not process Matrix Market banner.\n");
-        exit(1);
-    }
+ filename = argv[1];
 
+ /***************************************
+  * If the matrix Instance is COO
+  * ***********************************//
 
-    /*  This is how one can screen matrix types if their application */
-    /*  only supports a subset of the Matrix Market data types.      */
+      //Initialize COO Matrix first//
+     // coo_init_matrix(&coo);
 
-    if (mm_is_complex(matcode) && mm_is_matrix(matcode) &&
-            mm_is_sparse(matcode) )
-    {
-        printf("Sorry, this application does not support ");
-        printf("Market Market type: [%s]\n", mm_typecode_to_str(matcode));
-        exit(1);
-    }
+      //Load COO Matrix
+     // printf("Loading matrix \"%s\"\n", filename);
+      
+     // sym1 = coo_load_matrix(filename, &coo);
 
-    /* find out size of sparse matrix .... */
+     // Print Matrix data
+     // printf("COO matrix data:\n");
+     // coo_print_matrix(&coo);
 
-    if ((ret_code = mm_read_mtx_crd_size(f, &M, &N, &nz)) !=0)
-        exit(1);
+/********************************************
+ * COO to CSR Matrix - Conversion and loading
+ * ********************************************// 
+      // Initialize matrices.
+      csr_init_matrix(&csr);
+      
+     // Load matrix from file into COO.
+      printf("Loading matrix \"%s\"\n", filename);
+      sym = csr_load_matrix(filename, &csr);
+    
+     if(sym) printf("Matrix is symmetric\n");
+     else    printf("Matrix is general (non-symmetric)\n");
+ 
+      // Print Matrix data
+      printf("CSR matrix data:\n");
+      csr_print_matrix(&csr);
 
-
-    /* reseve memory for matrices */
-
- if (mm_is_symmetric(matcode)){
-
-    I = (int *) malloc(nz *2* sizeof(int));
-    J = (int *) malloc(nz *2* sizeof(int));
-    val = (double *) malloc(nz *2* sizeof(double));
- }
-
- else {
-    I = (int *) malloc(nz * sizeof(int));
-    J = (int *) malloc(nz * sizeof(int));
-    val = (double *) malloc(nz * sizeof(double));
-  }
-
-    /* NOTE: when reading in doubles, ANSI C requires the use of the "l"  */
-    /*   specifier as in "%lg", "%lf", "%le", otherwise errors will occur */
-    /*  (ANSI C X3.159-1989, Sec. 4.9.6.2, p. 136 lines 13-15)            */
-
-
- k=0;
-  for (i=0; i<nz; i++)  {
-    if (mm_is_pattern(matcode)){
-      fscanf(f, "%d %d", &I[i], &J[i]);
-      I[i] --;  /* adjust from 1-based to 0-based */
-      J[i] --;
-
-      val[i] = random_double(-1, 1);
-    }
-    else if (mm_is_real(matcode)){
-      fscanf(f, "%d %d %le\n", &I[i], &J[i], &val[i]);
-      (I)[i] --;  /* adjust from 1-based to 0-based */
-      (J)[i] --;
-    }
-
-    if (mm_is_symmetric(matcode)){
-      if ( I[i] != J[i] ){
-	I[nz+k] = J[i];
-	J[nz+k] = I[i];
-	val[nz+k] = val[i];
-	k++;
+     exit(EXIT_SUCCESS);
       }
-    }
-  }
-  nz += k;
 
-   if (f !=stdin) fclose(f);
-
-    coo2csr_in (M, nz, val, I, J);
-
-    /************************/
-    /* now write out matrix */
-    /************************/
-
-    mm_write_banner(stdout, matcode);
-    mm_write_mtx_crd_size(stdout, M, N, nz);
-    for (i=0; i<M; i++){
-    
-    
-         fprintf(stdout, "%d %d\n",i, I[i+1]-I[i]);
-            for (j=I[i]; j<I[i+1]; j++)
-                fprintf(f, "%d %2.8le\n", J[j], val[j]);
-    
-    }
-
-	return 0;
-}
 
 /*********************************
  * TODO 
 *********************************/
+/*
+  1. Creat a Random matrix B in Matlab/C and allocate the values to array. 
+  2. Compute Norm */
 
-/*1. Matrix vector multiplication of sparse matrix in COO format with a vector
-  2. Creat a Random matrix B in Matlab/C and allocate the values to array. 
-  3. Compute Norm */ 
+void print_vector(char* pre, double *v, unsigned int size){
+       unsigned int i;
+       printf("%s", pre);
+         for(i = 0; i < size; i++){
+         //printf("%.1f ", v[i]);
+         printf("%e \n", v[i]);
+     }
+     printf("\n");
+ }
+
+     void parse_args(int argc, char *argv[]){
+     int i;
+     if (argc < 2) {
+         printf("Usage: %s input_matrix [iterations]\n", argv[0]);
+         exit(EXIT_FAILURE);
+     }
+       if(argc >= 3){
+         i = atoi(argv[2]);
+         if (i <= 0){
+             printf("Invalid number of iterations.\n");
+             exit(EXIT_FAILURE);
+         }
+             iterations = i;
+     }
+ }
+

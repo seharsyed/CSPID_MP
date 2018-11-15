@@ -63,8 +63,8 @@ dlvl = ./.
 #--------------------------------------------------------------------------
 #Object Files
 #--------------------------------------------------------------------------
-OBJFILES = cspid.o 
-TARGET = cspid
+
+TARGET = cspid   #Name of the files that should provide the output
 RM = rm -f
 
 
@@ -72,17 +72,18 @@ RM = rm -f
 #CSPID compilation
 #-------------------------------------------------------------------------
 
-COMMON_DEPS=mmio.c mmio.h clock.h coo.h
+LIBRARIES =	 $(LAPACKELIB) $(LAPACKLIB) $(CBLIB) $(BLLIB);
+
+COMMON_DEPS = mmio.c mmio.h clock.h coo.h csr.h 
 
 all: $(TARGET)
 
-LIBRARIES =	 $(LAPACKELIB) $(LAPACKLIB) $(CBLIB) $(BLLIB);
+cspid: cspid.c $(COMMON_DEPS)
+	$(CC) $(FLAGS) -o cspid cspid.c mmio.c
+	
+clean:
+	$(RM) $(TARGET)	
 
-test: 
-	$(CC) -c $(CFLAGS) -I$(INCLUDES) cspid.c
-	 $(LIBRARIES)
- 
-clean: 
 cleanobj:
 		rm -f *.o
 

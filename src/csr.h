@@ -294,29 +294,29 @@ void csr_free_matrix(CSR_Matrix *m){
  * Prints matrix m data on console.
  */
 void csr_print_matrix(CSR_Matrix *m){
-	// unsigned int i,j;
-	// printf("val= ");
-	// j = 1;
-	// for(i=0; i < m->nz; i++){
-		// if(i == m->ptr[j]){
-			// printf("|");
-			// j++;
-		// }
-		// printf("%.2g ", m->val[i]);
-	// }
-	// j = 1;
-	// printf("\ncol= ");
-	// for(i=0; i < m->nz; i++){
-		// if(i == m->ptr[j]){
-			// printf("|");
-			// j++;
-		// }
-		// printf("%d ", m->col[i]);
-	// }
-	// printf("\nptr= ");
-	// for(i=0; i < m->rows+1; i++){
-		// printf("%d ", m->ptr[i]);
-	// }
+	 unsigned int i,j;
+	printf("val= ");
+	 j = 1;
+	 for(i=0; i < m->nz; i++){
+		 if(i == m->ptr[j]){
+			 printf("|");
+			 j++;
+		 }
+		 printf("%.2g ", m->val[i]);
+	 }
+	 j = 1;
+	 printf("\ncol= ");
+	 for(i=0; i < m->nz; i++){
+		if(i == m->ptr[j]){
+			 printf("|");
+			 j++;
+		 }
+		 printf("%d ", m->col[i]);
+	 }
+	 printf("\nptr= ");
+	 for(i=0; i < m->rows+1; i++){
+		 printf("%d ", m->ptr[i]);
+	 }
 	printf("\tnz= %d\n", m->nz);
 	printf("\trows= %d\n", m->rows);
 	printf("\tcols= %d\n", m->cols);

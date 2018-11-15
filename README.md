@@ -13,7 +13,10 @@ The main folder is divided into these parts:
 
 The code is compiled by accessing the src folder. 
 once inside the src folder type: 
-  a) make clean (It removes all the previous object files)  
-  b) make all  (compiles the C implemenation) 
-  c) ./cspid filename 
+  
+  1) make clean (It removes all the previous object files)  
+  
+  2) make all  (compiles the C implemenation) 
+  
+  3) ./cspid filename 
           Here the matrix instance is matrixA.mtx 

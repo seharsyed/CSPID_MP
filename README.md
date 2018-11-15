@@ -12,7 +12,9 @@ The main folder is divided into these parts:
 4. src: all the source files 
 
 The code is compiled by accessing the src folder. 
-once inside the src folder type: 
+once inside the src folder 
+   
+    type: 
   
   1) make clean (It removes all the previous object files)  
   

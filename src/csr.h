@@ -317,7 +317,7 @@ void csr_print_matrix(CSR_Matrix *m){
 	 for(i=0; i < m->rows+1; i++){
 		 printf("%d ", m->ptr[i]);
 	 }
-	printf("\tnz= %d\n", m->nz);
+	printf("\n\tnz= %d\n", m->nz);
 	printf("\trows= %d\n", m->rows);
 	printf("\tcols= %d\n", m->cols);
 }

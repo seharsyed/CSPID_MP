@@ -74,11 +74,11 @@ RM = rm -f
 
 LIBRARIES =	 $(LAPACKELIB) $(LAPACKLIB) $(CBLIB) $(BLLIB);
 
-COMMON_DEPS = mmio.c mmio.h clock.h coo.h csr.h 
+COMMON_DEPS = mmio.c 
 
 all: $(TARGET)
 
-cspid: cspid.c $(COMMON_DEPS)
+cspid: cspid.c $(COMMON_DEPS) $(INCLUDES)
 	$(CC) $(FLAGS) -o cspid cspid.c mmio.c
 	
 clean:

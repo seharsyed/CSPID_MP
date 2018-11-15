@@ -48,7 +48,7 @@ parse_args(argc, argv);
 
  /***************************************
   * If the matrix Instance is COO
-  * ***********************************//
+  * ***********************************/
 
       //Initialize COO Matrix first//
      // coo_init_matrix(&coo);
@@ -64,7 +64,7 @@ parse_args(argc, argv);
 
 /********************************************
  * COO to CSR Matrix - Conversion and loading
- * ********************************************// 
+ * ********************************************/ 
       // Initialize matrices.
       csr_init_matrix(&csr);
       

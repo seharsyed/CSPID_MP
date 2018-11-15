@@ -21,4 +21,4 @@ once inside the src folder
   2) make all  (compiles the C implemenation) 
   
   3) ./cspid filename 
-          Here the matrix instance is matrixA.mtx 
+          (Here the matrix instance is matrixA.mtx)

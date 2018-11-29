@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#include <math.h>
 
 #include "mmio.h"
 #include "clock.h"
@@ -23,6 +24,7 @@ unsigned int iterations=1000;
 
 void parse_args(int argc, char *argv[]);
 void print_vector(char* pre, double *v, unsigned int size);
+double randf(double low,double high);
 
 int main(int argc, char *argv[])
 {
@@ -99,7 +101,7 @@ parse_args(argc, argv);
     }
 	for(i = 0; i <csr.rows; i++){
 	  for (j=0;j<nrhs; j++){
-              B[i][j] = rand()/(RAND_MAX+1.0);
+              B[i][j] = randf(-1,1);
 	          printf("\t%.2g\t",B[i][j]);
       }
       printf("\n");
@@ -143,5 +145,8 @@ void print_vector(char* pre, double *v, unsigned int size){
      }
  }
 
+double randf(double low,double high){
+ return (rand()/(double)(RAND_MAX))*fabs(low-high)+low;
+}
 
 //void print_matrix(double *M

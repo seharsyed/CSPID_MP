@@ -92,14 +92,14 @@ parse_args(argc, argv);
  printf("Enter the desired  no of right hand sides for matrix B\n");
  scanf("%d",&nrhs);
 
-    B = (double **)malloc(csr.rows*sizeof(double));
+   B = (double**)malloc(csr.rows*sizeof(double));
     for(int k =0;k<csr.rows;k++)
     {
      B[k]= malloc(nrhs*sizeof(double));
     }
 	for(i = 0; i <csr.rows; i++){
 	  for (j=0;j<nrhs; j++){
-              B[i][j] = rand();
+              B[i][j] = rand()/(RAND_MAX+1.0);
 	          printf("\t%.2g\t",B[i][j]);
       }
       printf("\n");
@@ -107,7 +107,7 @@ parse_args(argc, argv);
 
    
 
-free(x);
+free(B);
 exit(EXIT_SUCCESS);
 }
 

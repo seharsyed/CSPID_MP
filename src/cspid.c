@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
     MM_typecode matcode;
     char* filename;
     double **B;
-    double *x, *y;
+    double **x, *y;
     FILE *f;       //This file is used for reading RHS//
     int M, N, nz, nrhs;
     int *I, *J, k, j;
@@ -89,39 +89,32 @@ parse_args(argc, argv);
     *  I will change it later to create the random matrix in C*/
 
 
-/*    printf("Enter the no of desired right hand sides\n");
-	scanf("%d",&nrhs);*/
-/*
-    B = (double **)malloc(csr.rows * sizeof(double));
-      
-     for(i = 0; i < csr.rows; i++){
-         for(j=0;j<nrhs;j++){
-             B[i][j]=rand();
-             printf("%f\t",B[i][j]);
-			}
-			printf("\n");
-          }*/
-    nrhs = 10;
-    x = (double *)malloc(csr.cols *nrhs* sizeof(double));
-	for(i = 0; i < csr.cols; i++){
+ printf("Enter the desired  no of right hand sides for matrix B\n");
+ scanf("%d",&nrhs);
+
+    B = (double **)malloc(csr.rows*sizeof(double));
+    for(int k =0;k<csr.rows;k++)
+    {
+     B[k]= malloc(nrhs*sizeof(double));
+    }
+	for(i = 0; i <csr.rows; i++){
 	  for (j=0;j<nrhs; j++){
-              x[i][j] = rand();
-	          printf("\t%f\t",x[i][j]);
+              B[i][j] = rand();
+	          printf("\t%.2g\t",B[i][j]);
       }
       printf("\n");
     }
 
-    //print_vector("\t%d\t", x[i][j]);//
+   
 
-
+free(x);
 exit(EXIT_SUCCESS);
 }
 
 /*********************************
  * TODO 
 *********************************/
-/*
-  1. Creat a Random matrix B in Matlab/C and allocate the values to array. 
+/* 
   2. Compute Norm */
 
 void print_vector(char* pre, double *v, unsigned int size){
@@ -150,3 +143,5 @@ void print_vector(char* pre, double *v, unsigned int size){
      }
  }
 
+
+//void print_matrix(double *M

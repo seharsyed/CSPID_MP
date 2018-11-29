@@ -35,10 +35,10 @@ int main(int argc, char *argv[])
     Clock clock;
     MM_typecode matcode;
     char* filename;
-    double *x;
-    double *y;
+    double **B;
+    double *x, *y;
     FILE *f;       //This file is used for reading RHS//
-    int M, N, nz;
+    int M, N, nz, nrhs;
     int *I, *J, k, j;
     double *val;
 
@@ -79,9 +79,43 @@ parse_args(argc, argv);
       printf("CSR matrix data:\n");
       csr_print_matrix(&csr);
 
-     exit(EXIT_SUCCESS);
-      }
 
+/*****************************************
+ *Random Right Hand Side Generation 
+ ****************************************/
+
+    //Random Matrix Generation for RHS//
+    /* Here I am reading the matrix B generated in Matlab and allocating the values to C.
+    *  I will change it later to create the random matrix in C*/
+
+
+/*    printf("Enter the no of desired right hand sides\n");
+	scanf("%d",&nrhs);*/
+/*
+    B = (double **)malloc(csr.rows * sizeof(double));
+      
+     for(i = 0; i < csr.rows; i++){
+         for(j=0;j<nrhs;j++){
+             B[i][j]=rand();
+             printf("%f\t",B[i][j]);
+			}
+			printf("\n");
+          }*/
+    nrhs = 10;
+    x = (double *)malloc(csr.cols *nrhs* sizeof(double));
+	for(i = 0; i < csr.cols; i++){
+	  for (j=0;j<nrhs; j++){
+              x[i][j] = rand();
+	          printf("\t%f\t",x[i][j]);
+      }
+      printf("\n");
+    }
+
+    //print_vector("\t%d\t", x[i][j]);//
+
+
+exit(EXIT_SUCCESS);
+}
 
 /*********************************
  * TODO 
@@ -92,7 +126,7 @@ parse_args(argc, argv);
 
 void print_vector(char* pre, double *v, unsigned int size){
        unsigned int i;
-       printf("%s", pre);
+      printf("%s", pre);
          for(i = 0; i < size; i++){
          //printf("%.1f ", v[i]);
          printf("%e \n", v[i]);

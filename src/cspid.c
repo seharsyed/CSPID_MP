@@ -43,10 +43,11 @@ int main(int argc, char *argv[])
     MM_typecode matcode;
     char* filename;
     double *w,*e, *relres;
-    double **B, **R0;
+    double **B, **R0, **V, **H, **E;
     FILE *f;       //This file is used for reading RHS//
     int M, N, nz, nrhs;
     int bloc;
+    int restart, iter, maxit, m; //m = inner+p from matlab code//
     int *I, *J, k, j;
     double *val;
     double a;
@@ -94,6 +95,8 @@ parse_args(argc, argv);
  ****************************************/
 
     //Random Matrix Generation for RHS//
+ printf("Enter the restart value = \n ");
+ scanf("%d", &restart);
 
  printf("Enter the desired  no of right hand sides for matrix B\n");
  scanf("%d",&nrhs);
@@ -122,13 +125,16 @@ print_matrix(B, csr.rows, nrhs);
    5. Least Square
    6. LU factors (Preconditioning) */
 
-//First initialize a vector for computing norm//
+//Initialization of vectors for computing norm//
 w = (double *)malloc(csr.rows * sizeof(double));
 e = (double *)malloc(csr.rows * sizeof(double));
 relres = (double *)malloc(csr.rows * sizeof(double));
 
- printf("\nThe norm of each rhs is \n");
+/********************************
+*Norm and Reidual Norm
+********************************/
 
+ printf("\nThe norm of each rhs is \n");
   for (k = 0; k<nrhs;k++){
    w[k] = vecnorm(csr.rows, B[k], B[k]);
   } 
@@ -147,8 +153,57 @@ e[k] = vecnorm(csr.rows, R0[k], R0[k]);
 
 print_vector("\n Relative Residual Norm =\n ", relres, csr.rows);
 
+/****************************************
+//Initialization of V-space, H and E//
+   //Start of while block// 
+****************************************/
+m = restart+nrhs;
+
+V =  dmatrix(0, csr.rows, 0, m);
+H = dmatrix(0, m, 0, restart);
+E = dmatrix(0, m, 0, nrhs);
+
+for ( i = 0; i < m; i++ ) {
+      for ( j = 0; j < restart; j++ ) {
+        H[i][j] = 0.0;
+      }
+    }
+
+for ( i = 0; i < csr.rows; i++ ) {
+      for ( j = 0; j < m; j++ ){
+        V[i][j] = 0.0;
+      }
+    }
+
+for ( i = 0; i < m; i++ ) {
+       for ( j = 0; j < nrhs; j++ ){
+           E[i][j] = 0.0;
+       }
+}
+
+
+
+
+
+
+
+printf("\n\n The V space is \n");
+print_matrix(V, csr.rows, m);
+
+printf("\n\n The Hessenberg matrix is \n");
+print_matrix(H, m, restart);
+
+printf("\n\n The Matrix E is \n");
+print_matrix(E, m, nrhs);
+
+
 //Free resources  
 free(w);
+free(relres);
+free(e);
+free_dmatrix(V,0, csr.rows, 0, m);
+free_dmatrix(H, 0, m, 0, restart);
+free_dmatrix(E, 0, m, 0, nrhs);
 free_dmatrix ( B, 0, csr.rows, 0, nrhs );
 exit(EXIT_SUCCESS); //Exit the main function 
 }

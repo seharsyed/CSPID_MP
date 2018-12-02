@@ -17,6 +17,7 @@
 #include "clock.h"
 #include "coo.h"
 #include "csr.h"
+#include "f2c.h"
 
 /* Reading the Matrix from MM. The matrix is in CSR Format*/
 
@@ -25,6 +26,10 @@ unsigned int iterations=1000;
 void parse_args(int argc, char *argv[]);
 void print_vector(char* pre, double *v, unsigned int size);
 double randf(double low,double high);
+double **dmatrix ( int nrl, int nrh, int ncl, int nch );
+void free_dmatrix ( double **m, int nrl, int nrh, int ncl, int nch );
+double  vecnorm(int n, double a1[], double a2[]); 
+void print_matrix(double **arr, int rows, int cols);
 
 int main(int argc, char *argv[])
 {
@@ -37,12 +42,14 @@ int main(int argc, char *argv[])
     Clock clock;
     MM_typecode matcode;
     char* filename;
-    double **B;
-    double **x, *y;
+    double *w;
+    double **B, *y;
     FILE *f;       //This file is used for reading RHS//
     int M, N, nz, nrhs;
+    int bloc;
     int *I, *J, k, j;
     double *val;
+    double a;
 
 parse_args(argc, argv);
 
@@ -87,37 +94,54 @@ parse_args(argc, argv);
  ****************************************/
 
     //Random Matrix Generation for RHS//
-    /* Here I am reading the matrix B generated in Matlab and allocating the values to C.
-    *  I will change it later to create the random matrix in C*/
-
 
  printf("Enter the desired  no of right hand sides for matrix B\n");
  scanf("%d",&nrhs);
-
-   B = (double**)malloc(csr.rows*sizeof(double));
-    for(int k =0;k<csr.rows;k++)
-    {
-     B[k]= malloc(nrhs*sizeof(double));
-    }
-	for(i = 0; i <csr.rows; i++){
-	  for (j=0;j<nrhs; j++){
-              B[i][j] = randf(-1,1);
-	          printf("\t%.2g\t",B[i][j]);
-      }
-      printf("\n");
-    }
-
    
+   printf(" The value of rows = %d\n",csr.rows);
+   printf(" The value of cols = %d\n",nrhs);
+ 
+  B = dmatrix(0,csr.rows, 0, nrhs);
 
-free(B);
-exit(EXIT_SUCCESS);
-}
+  for(i = 0; i <csr.rows; i++){
+	  for (j=0;j<nrhs; j++){
+              B[i][j] = randf(0,1);
+      }
+    }
+
+print_matrix(B, csr.rows, nrhs);
+
 
 /*********************************
- * TODO 
+ * * TODO 
+ *********************************/
+ /*1. Norm  (status done! but values are not precise something to do with pointer perhaps)
+   2. Qr Factors of 
+   3. Initialize V, H and E
+   4. Modified Gram-Schmit Loop */
+
+//First initialize a vector for computing norm//
+w = (double *)malloc(csr.rows * sizeof(double));
+  
+ printf("\nThe norm of each rhs is \n");
+
+  for (k = 0; k<nrhs;k++){
+   w[k] = vecnorm(csr.rows,B[k], B[k]);
+  } 
+
+ print_vector("\nnorm =\n ", w, csr.rows);
+
+
+//Free resources  
+//free(w);
+free_dmatrix ( B, 0, csr.rows, 0, nrhs );
+exit(EXIT_SUCCESS); //Exit the main function 
+}
+
+
+/*********************************
+ * Functions 
 *********************************/
-/* 
-  2. Compute Norm */
 
 void print_vector(char* pre, double *v, unsigned int size){
        unsigned int i;
@@ -149,4 +173,126 @@ double randf(double low,double high){
  return (rand()/(double)(RAND_MAX))*fabs(low-high)+low;
 }
 
-//void print_matrix(double *M
+
+void print_matrix(double **arr, int rows, int cols){
+   
+    for(int i = 0; i <rows; i++){
+        for (int j=0;j<cols; j++){
+              
+               printf("\t%e\t",arr[i][j]);
+       }
+      printf("\n");
+    }
+
+}
+
+
+/*************************************
+ *Allocating 2D-Array
+Parameters:
+
+    Input, int NRL, NRH, the low and high row indices.
+
+    Input, int NCL, NCH, the low and high column indices.
+
+    Output, double **DMATRIX, a doubly-dimensioned array with
+    the requested row and column ranges.
+
+ ************************************/
+double **dmatrix ( int nrl, int nrh, int ncl, int nch )
+
+{
+  int i;
+  double **m;
+  int nrow = nrh - nrl + 1;
+  int ncol = nch - ncl + 1;
+/* 
+  Allocate pointers to the rows.
+*/
+  m = ( double ** ) malloc ( (size_t) ( ( nrow + 1 ) * sizeof ( double* ) ) );
+
+  if ( ! m ) 
+  {
+    fprintf ( stderr, "\n" );
+    fprintf ( stderr, "DMATRIX - Fatal error!\n" );
+    fprintf ( stderr, "  Failure allocating pointers to rows.\n");
+    exit ( 1 );
+  }
+  m = m + 1;
+  m = m - nrl;
+/* 
+  Allocate each row and set pointers to them.
+*/
+  m[nrl] = ( double * ) malloc ( (size_t) ( ( nrow * ncol + 1 ) * sizeof ( double ) ) );
+
+  if ( ! m[nrl] ) 
+  {
+    fprintf ( stderr, "\n" );
+    fprintf ( stderr, "DMATRIX - Fatal error!\n" );
+    fprintf ( stderr, "  Failure allocating rows.\n");
+    exit ( 1 );
+  }
+  m[nrl] = m[nrl] + 1;
+  m[nrl] = m[nrl] - ncl;
+
+  for ( i = nrl + 1; i <= nrh; i++ ) 
+  { 
+    m[i] = m[i-1] + ncol;
+  }
+/* 
+  Return the pointer to the array of pointers to the rows;
+*/
+  return m;
+}
+
+/******************************************************************************/
+
+void free_dmatrix ( double **m, int nrl, int nrh, int ncl, int nch )
+
+/******************************************************************************/
+/*
+  Purpose:
+
+    FREE_DMATRIX frees a double matrix allocated by DMATRIX 
+
+  Parameters:
+
+    Input, int NRL, NRH, the low and high row indices.
+
+    Input, int NCL, NCH, the low and high column indices.
+
+    Input, double **M, the pointer to the doubly-dimensioned array,
+    previously created by a call to DMATRIX.
+*/
+{
+  free ( ( char * ) ( m[nrl] + ncl - 1 ) );
+  free ( ( char * ) ( m + nrl - 1 ) );
+
+  return;
+}
+
+/******************************************************************************/
+
+double vecnorm( int n, double a1[], double a2[] )
+
+/******************************************************************************/
+/*Parameters:
+
+    Input, int N, the number of entries in the vectors.
+
+    Input, double A1[N], A2[N], the two vectors to be considered.
+
+    Output, SQRT of the dot product of the vectors.
+*/
+
+{
+  int i;
+  double value;
+
+  value = 0.0;
+  for ( i = 0; i < n; i++ ){
+    value += a1[i] * a2[i];
+  }
+  return sqrt(value);
+}
+

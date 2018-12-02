@@ -28,7 +28,7 @@ void print_vector(char* pre, double *v, unsigned int size);
 double randf(double low,double high);
 double **dmatrix ( int nrl, int nrh, int ncl, int nch );
 void free_dmatrix ( double **m, int nrl, int nrh, int ncl, int nch );
-double  vecnorm(int n, double *a1, double *a2); 
+double  vecnorm(int n, double a1[], double a2[]); 
 void print_matrix(double **arr, int rows, int cols);
 
 int main(int argc, char *argv[])
@@ -42,8 +42,8 @@ int main(int argc, char *argv[])
     Clock clock;
     MM_typecode matcode;
     char* filename;
-    double *w;
-    double **B, *y;
+    double *w,*e, *relres;
+    double **B, **R0;
     FILE *f;       //This file is used for reading RHS//
     int M, N, nz, nrhs;
     int bloc;
@@ -124,7 +124,9 @@ print_matrix(B, csr.rows, nrhs);
 
 //First initialize a vector for computing norm//
 w = (double *)malloc(csr.rows * sizeof(double));
-  
+e = (double *)malloc(csr.rows * sizeof(double));
+relres = (double *)malloc(csr.rows * sizeof(double));
+
  printf("\nThe norm of each rhs is \n");
 
   for (k = 0; k<nrhs;k++){
@@ -133,12 +135,20 @@ w = (double *)malloc(csr.rows * sizeof(double));
 
  print_vector("\nnorm =\n ", w, csr.rows);
 
+R0 = B;
+for (k=0;k<nrhs; k++){
+e[k] = vecnorm(csr.rows, R0[k], R0[k]);
+}
+//Residual Norm 
 
+ for (k=0; k<nrhs; k++){
+ relres[k] = e[k]/w[k];
+ }
 
-
+print_vector("\n Relative Residual Norm =\n ", relres, csr.rows);
 
 //Free resources  
-//free(w);
+free(w);
 free_dmatrix ( B, 0, csr.rows, 0, nrhs );
 exit(EXIT_SUCCESS); //Exit the main function 
 }
@@ -278,7 +288,7 @@ void free_dmatrix ( double **m, int nrl, int nrh, int ncl, int nch )
 
 /******************************************************************************/
 
-double vecnorm( int n, double *a1, double *a2 )
+double vecnorm( int n, double a1[], double a2[])
 
 /******************************************************************************/
 /*Parameters:

@@ -28,7 +28,7 @@ void print_vector(char* pre, double *v, unsigned int size);
 double randf(double low,double high);
 double **dmatrix ( int nrl, int nrh, int ncl, int nch );
 void free_dmatrix ( double **m, int nrl, int nrh, int ncl, int nch );
-double  vecnorm(int n, double a1[], double a2[]); 
+double  vecnorm(int n, double *a1, double *a2); 
 void print_matrix(double **arr, int rows, int cols);
 
 int main(int argc, char *argv[])
@@ -115,10 +115,12 @@ print_matrix(B, csr.rows, nrhs);
 /*********************************
  * * TODO 
  *********************************/
- /*1. Norm  (status done! but values are not precise something to do with pointer perhaps)
-   2. Qr Factors of 
-   3. Initialize V, H and E
-   4. Modified Gram-Schmit Loop */
+ /*1. Norm  (status done! but values are not precise something to do with pointer perhaps) 
+   2. Initialize V, H and E
+   3. QR factors
+   4. Modified Gram-Schmit Loop
+   5. Least Square
+   6. LU factors (Preconditioning) */
 
 //First initialize a vector for computing norm//
 w = (double *)malloc(csr.rows * sizeof(double));
@@ -126,10 +128,13 @@ w = (double *)malloc(csr.rows * sizeof(double));
  printf("\nThe norm of each rhs is \n");
 
   for (k = 0; k<nrhs;k++){
-   w[k] = vecnorm(csr.rows,B[k], B[k]);
+   w[k] = vecnorm(csr.rows, B[k], B[k]);
   } 
 
  print_vector("\nnorm =\n ", w, csr.rows);
+
+
+
 
 
 //Free resources  
@@ -273,7 +278,7 @@ void free_dmatrix ( double **m, int nrl, int nrh, int ncl, int nch )
 
 /******************************************************************************/
 
-double vecnorm( int n, double a1[], double a2[] )
+double vecnorm( int n, double *a1, double *a2 )
 
 /******************************************************************************/
 /*Parameters:

@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
     char* filename;
     double *w,*e, *relres;
     double **B, **R0, **V, **H, **E;
+    double **T;
     FILE *f;       //This file is used for reading RHS//
     int M, N, nz, nrhs;
     int bloc;
@@ -114,40 +115,55 @@ parse_args(argc, argv);
 
 print_matrix(B, csr.rows, nrhs);
 
+//Temperoray Transpose of B 
+T = dmatrix(0,csr.rows,0, nrhs);
+
+for(i=0; i<csr.rows; ++i)
+        for(j=0; j<nrhs; ++j)
+        {
+            T[j][i] = B[i][j];
+        }
+
+printf("The transpose of B is\n");
+print_matrix(T, nrhs, csr.rows);
 
 /*********************************
  * * TODO 
  *********************************/
  /*1. Norm  (status done! but values are not precise something to do with pointer perhaps) 
-   2. Initialize V, H and E
-   3. QR factors
-   4. Modified Gram-Schmit Loop
+   2. Initialize V, H and E (Done) 
+   3. QR factors  (Doing) 
+   4. Modified Gram-Schmit Loop (Doing) 
    5. Least Square
    6. LU factors (Preconditioning) */
 
 //Initialization of vectors for computing norm//
-w = (double *)malloc(csr.rows * sizeof(double));
-e = (double *)malloc(csr.rows * sizeof(double));
-relres = (double *)malloc(csr.rows * sizeof(double));
+w = (double *)malloc(nrhs * sizeof(double));
+e = (double *)malloc(nrhs * sizeof(double));
+relres = (double *)malloc(nrhs * sizeof(double));
 
 /********************************
 *Norm and Reidual Norm
 ********************************/
-
+/*
+for (k = 0; k<csr.rows;k++){
+w[k] = 0.0;
+  }
+*/
  printf("\nThe norm of each rhs is \n");
-  for (k = 0; k<nrhs;k++){
-   w[k] = vecnorm(csr.rows, B[k], B[k]);
+  for (k = 0; k<csr.rows;k++){
+   w[k] = vecnorm(nrhs, T[k], T[k]);
   } 
 
  print_vector("\nnorm =\n ", w, csr.rows);
 
 R0 = B;
-for (k=0;k<nrhs; k++){
-e[k] = vecnorm(csr.rows, R0[k], R0[k]);
+for (k=0;k<csr.rows; k++){
+e[k] = vecnorm(nrhs, R0[k], R0[k]);
 }
 //Residual Norm 
 
- for (k=0; k<nrhs; k++){
+ for (k=0; k<csr.rows; k++){
  relres[k] = e[k]/w[k];
  }
 
@@ -181,12 +197,15 @@ for ( i = 0; i < m; i++ ) {
        }
 }
 
+/******************************
+ * Construction of V space
+ * *****************************/
 
 
 
 
 
-
+// Printing matrices for Debugging 
 printf("\n\n The V space is \n");
 print_matrix(V, csr.rows, m);
 

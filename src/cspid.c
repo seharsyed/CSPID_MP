@@ -207,6 +207,7 @@ for ( i = 0; i < m; i++ ) {
 
 
 // Printing matrices for Debugging 
+/*
 printf("\n\n The V space is \n");
 print_matrix(V, csr.rows, m);
 
@@ -214,7 +215,7 @@ printf("\n\n The Hessenberg matrix is \n");
 print_matrix(H, m, restart);
 
 printf("\n\n The Matrix E is \n");
-print_matrix(E, m, nrhs);
+print_matrix(E, m, nrhs);*/
 
 
 //Free resources  

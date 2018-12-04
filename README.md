@@ -20,5 +20,9 @@ once inside the src folder
   
   2) make all  (compiles the C implemenation) 
   
-  3) ./cspid filename 
+  3) ./cspid matrixA.mtx
           (Here the matrix instance is matrixA.mtx)
+  4) Enter the no of restart
+            'type' 10
+ 5) Enter the no of restart 
+          'type' 10

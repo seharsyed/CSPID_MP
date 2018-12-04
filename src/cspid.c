@@ -116,9 +116,9 @@ parse_args(argc, argv);
 print_matrix(B, csr.rows, nrhs);
 
 //Temperoray Transpose of B 
-T = dmatrix(0,csr.rows,0, nrhs);
+/*T = dmatrix(0,nrhs,0, csr.rows);
 
-for(i=0; i<csr.rows; ++i)
+   for(i=0; i<csr.rows; ++i)
         for(j=0; j<nrhs; ++j)
         {
             T[j][i] = B[i][j];
@@ -138,7 +138,7 @@ print_matrix(T, nrhs, csr.rows);
    6. LU factors (Preconditioning) */
 
 //Initialization of vectors for computing norm//
-w = (double *)malloc(nrhs * sizeof(double));
+w = (double *)malloc(csr.rows * sizeof(double));
 e = (double *)malloc(nrhs * sizeof(double));
 relres = (double *)malloc(nrhs * sizeof(double));
 
@@ -151,23 +151,24 @@ w[k] = 0.0;
   }
 */
  printf("\nThe norm of each rhs is \n");
-  for (k = 0; k<csr.rows;k++){
-   w[k] = vecnorm(nrhs, T[k], T[k]);
+  for (k = 0; k<nrhs;k++){
+   w[k] = vecnorm(csr.rows, B[k], B[k]);
   } 
 
  print_vector("\nnorm =\n ", w, csr.rows);
 
 R0 = B;
-for (k=0;k<csr.rows; k++){
-e[k] = vecnorm(nrhs, R0[k], R0[k]);
-}
+
+//for (k=0;k<csr.rows; k++){
+//e[k] = vecnorm(nrhs, R0[k], R0[k]);
+//}
 //Residual Norm 
 
- for (k=0; k<csr.rows; k++){
- relres[k] = e[k]/w[k];
- }
+ //for (k=0; k<csr.rows; k++){
+ //relres[k] = e[k]/w[k];
+// }
 
-print_vector("\n Relative Residual Norm =\n ", relres, csr.rows);
+//print_vector("\n Relative Residual Norm =\n ", relres, csr.rows);
 
 /****************************************
 //Initialization of V-space, H and E//
@@ -218,12 +219,13 @@ print_matrix(E, m, nrhs);
 
 //Free resources  
 free(w);
-free(relres);
-free(e);
+//free(relres);
+//free(e);
 free_dmatrix(V,0, csr.rows, 0, m);
 free_dmatrix(H, 0, m, 0, restart);
 free_dmatrix(E, 0, m, 0, nrhs);
 free_dmatrix ( B, 0, csr.rows, 0, nrhs );
+
 exit(EXIT_SUCCESS); //Exit the main function 
 }
 

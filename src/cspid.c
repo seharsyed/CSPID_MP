@@ -87,8 +87,8 @@ parse_args(argc, argv);
      else    printf("Matrix is general (non-symmetric)\n");
  
       // Print Matrix data
-      printf("CSR matrix data:\n");
-      csr_print_matrix(&csr);
+//      printf("CSR matrix data:\n");
+  //    csr_print_matrix(&csr);
 
 
 /*****************************************

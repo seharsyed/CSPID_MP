@@ -29,11 +29,11 @@ LOADER = $(FC)
 
 #I have added the path to the static libaries, will resolve the dynamic library 
 #linking issue later. 
- 
+BLAS = -lblas
 CBLAS = -lcblas
 LIBES = -lm
-
-
+LAPACK = -llapack
+LAPACKE = -llapacke
 #----------------------------------------------------------------------------
 #Include files (Header files)
 #----------------------------------------------------------------------------
@@ -69,7 +69,7 @@ RM = rm -f
 #CSPID compilation
 #-------------------------------------------------------------------------
 
-LIB = $(LIBES) $(CBLAS)
+LIB = $(LIBES) $(LAPACKE) $(CBLAS) $(LAPACK) $(BLA)
 
 COMMON_DEPS = mmio.c 
 

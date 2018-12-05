@@ -12,6 +12,8 @@
 #include <string.h>
 #include <stddef.h>
 #include <math.h>
+#include "cblas.h"
+#include"lapacke.h"
 
 #include "mmio.h"
 #include "clock.h"
@@ -21,7 +23,7 @@
 
 /* Reading the Matrix from MM. The matrix is in CSR Format*/
 
-unsigned int iterations=1000;
+unsigned int maxit=1000;
 
 void parse_args(int argc, char *argv[]);
 void print_vector(char* pre, double *v, unsigned int size);
@@ -30,6 +32,7 @@ double **dmatrix ( int nrl, int nrh, int ncl, int nch );
 void free_dmatrix ( double **m, int nrl, int nrh, int ncl, int nch );
 double  vecnorm(int n, double a1[], double a2[]); 
 void print_matrix(double **arr, int rows, int cols);
+void dgeqrf(int M, int N, double** A, int LDA, double* TAU, double WORK, int LWORK, int INFO );
 
 int main(int argc, char *argv[])
 {
@@ -43,14 +46,15 @@ int main(int argc, char *argv[])
     MM_typecode matcode;
     char* filename;
     double *w,*e, *relres;
-    double **B, **R0, **V, **H, **E;
+    double **B, **R0, **V, **H, **E, **scal ;
     double **T;
     FILE *f;       //This file is used for reading RHS//
     int M, N, nz, nrhs;
+    int work, lwork, info;
     int bloc;
     int restart, iter, maxit, m; //m = inner+p from matlab code//
     int *I, *J, k, j;
-    double *val;
+    double *val, *tau;
     double a;
 
 parse_args(argc, argv);
@@ -141,10 +145,10 @@ print_matrix(B, csr.rows, nrhs);
    6. LU factors (Preconditioning) */
 
 //Initialization of vectors for computing norm
-w = (double *)malloc(nrhs* sizeof(double));
-//e = (double *)malloc(nrhs * sizeof(double));
-//relres = (double *)malloc(nrhs * sizeof(double));
-
+w = (double *)malloc(nrhs* sizeof(double));    //Allocation of vector Norm//
+//e = (double *)malloc(nrhs * sizeof(double));  
+//relres = (double *)malloc(nrhs * sizeof(double));  //Allocation of Relative Residual Vector//
+tau = (double *)malloc(nrhs* sizeof(double));  
 /********************************
 *Norm and Reidual Norm
 ********************************/
@@ -177,38 +181,53 @@ printf("\n");
 //Initialization of V-space, H and E//
    //Start of while block// 
 ****************************************/
-R0 = B;
+//R0 = B-A*X, where X = 0.0//
+
+R0 = B;               //Here I will add the Multiplication of co-efficient matrix with initial guess// 
 m = restart+nrhs;
+iter = 0;
 
-V =  dmatrix(0, csr.rows, 0, m);
-H = dmatrix(0, m, 0, restart);
-E = dmatrix(0, m, 0, nrhs);
+//for(iter <= maxit) {
+	V =  dmatrix(0, csr.rows, 0, m);    //Orthogonal Subspace V
+	H = dmatrix(0, m, 0, restart);      //Hessenberg Matrix
+	E = dmatrix(0, m, 0, nrhs);
+	scal = dmatrix(0,nrhs,0,nrhs);      //R factor from QR factorization of R0//
 
-for ( i = 0; i < m; i++ ) {
-      for ( j = 0; j < restart; j++ ) {
-        H[i][j] = 0.0;
-      }
-    }
+	for ( i = 0; i < m; i++ ) {
+      		for ( j = 0; j < restart; j++ ) {
+       			 H[i][j] = 0.0;
+     		 }
+    	}	
 
-for ( i = 0; i < csr.rows; i++ ) {
-      for ( j = 0; j < m; j++ ){
-        V[i][j] = 0.0;
-      }
-    }
+	for ( i = 0; i < csr.rows; i++ ) {
+      		for ( j = 0; j < m; j++ ){
+       		 V[i][j] = 0.0;
+      		}
+    	}
 
-for ( i = 0; i < m; i++ ) {
-       for ( j = 0; j < nrhs; j++ ){
-           E[i][j] = 0.0;
-       }
-}
+	for ( i = 0; i < m; i++ ) {
+       		for ( j = 0; j < nrhs; j++ ){
+           	E[i][j] = 0.0;
+       		}
+	}
 
 /******************************
  * Construction of V space
  * *****************************/
 
+/*CBlas routine for QR factors
+ dgeqrf(m, n, a, lda, tau, work, lwork, info);
+ Input Arguments: m = number of rows in matrix A used in the computation, 
+		  n = number of columns in matrix A used in the computation.
+                  a = m by n general matrix A whose QR factorization is to be computed.
+                lda = is the leading dimension of the array specified for a.
+               lwork = 0 for best performance
+ */
+lwork =0;
+dgeqrf(csr.rows,nrhs,R0, csr.rows,tau,work, lwork, info);
 
 
-
+//}  //End of for loop before QR-factors 
 
 // Printing matrices for Debugging 
 /*
@@ -231,9 +250,11 @@ free_dmatrix(H, 0, m, 0, restart);
 free_dmatrix(E, 0, m, 0, nrhs);
 free_dmatrix ( B, 0, csr.rows, 0, nrhs );
 free_dmatrix(T,0,nrhs,0, csr.rows);
+free_dmatrix(scal,0,nrhs,0,nrhs);
+
 
 exit(EXIT_SUCCESS); //Exit the main function 
-}
+}// End of main function
 
 
 /*********************************
@@ -262,7 +283,7 @@ void print_vector(char* pre, double *v, unsigned int size){
              printf("Invalid number of iterations.\n");
              exit(EXIT_FAILURE);
          }
-             iterations = i;
+             maxit = i;
      }
  }
 

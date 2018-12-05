@@ -76,6 +76,7 @@ parse_args(argc, argv);
 /********************************************
  * COO to CSR Matrix - Conversion and loading
  * ********************************************/ 
+     printf("Reading Matrix Market file Data\n");
       // Initialize matrices.
       csr_init_matrix(&csr);
       
@@ -90,16 +91,17 @@ parse_args(argc, argv);
 //      printf("CSR matrix data:\n");
   //    csr_print_matrix(&csr);
 
-
+       printf("\n\nReading : Successful\n");
 /*****************************************
  *Random Right Hand Side Generation 
  ****************************************/
 
     //Random Matrix Generation for RHS//
- printf("Enter the restart value = \n ");
- scanf("%d", &restart);
+// printf("Enter the restart value = \n ");
+// scanf("%d", &restart);
+restart = 10;
 
- printf("Enter the desired  no of right hand sides for matrix B\n");
+printf("Enter the desired  no of right hand sides for matrix B\n");
  scanf("%d",&nrhs);
    
    printf(" The value of rows = %d\n",csr.rows);
@@ -116,7 +118,7 @@ parse_args(argc, argv);
 print_matrix(B, csr.rows, nrhs);
 
 //Temperoray Transpose of B 
-/*T = dmatrix(0,nrhs,0, csr.rows);
+  T = dmatrix(0,nrhs,0, csr.rows);
 
    for(i=0; i<csr.rows; ++i)
         for(j=0; j<nrhs; ++j)
@@ -124,8 +126,9 @@ print_matrix(B, csr.rows, nrhs);
             T[j][i] = B[i][j];
         }
 
-printf("The transpose of B is\n");
-print_matrix(T, nrhs, csr.rows);
+//printf("The transpose of B is\n");
+//print_matrix(T, nrhs, csr.rows);
+
 
 /*********************************
  * * TODO 
@@ -137,27 +140,27 @@ print_matrix(T, nrhs, csr.rows);
    5. Least Square
    6. LU factors (Preconditioning) */
 
-//Initialization of vectors for computing norm//
-w = (double *)malloc(csr.rows * sizeof(double));
-e = (double *)malloc(nrhs * sizeof(double));
-relres = (double *)malloc(nrhs * sizeof(double));
+//Initialization of vectors for computing norm
+w = (double *)malloc(csr.rows* sizeof(double));
+//e = (double *)malloc(nrhs * sizeof(double));
+//relres = (double *)malloc(nrhs * sizeof(double));
 
 /********************************
 *Norm and Reidual Norm
 ********************************/
-/*
+
 for (k = 0; k<csr.rows;k++){
 w[k] = 0.0;
   }
-*/
+
  printf("\nThe norm of each rhs is \n");
   for (k = 0; k<nrhs;k++){
-   w[k] = vecnorm(csr.rows, B[k], B[k]);
+   w[k] = vecnorm(csr.rows, T[k], T[k]);
+   // printf("%.3f\t", w);
   } 
 
- print_vector("\nnorm =\n ", w, csr.rows);
-
-R0 = B;
+print_vector("\nnorm =\n ", w, csr.rows);
+/*
 
 //for (k=0;k<csr.rows; k++){
 //e[k] = vecnorm(nrhs, R0[k], R0[k]);
@@ -170,10 +173,12 @@ R0 = B;
 
 //print_vector("\n Relative Residual Norm =\n ", relres, csr.rows);
 
+
 /****************************************
 //Initialization of V-space, H and E//
    //Start of while block// 
 ****************************************/
+R0 = B;
 m = restart+nrhs;
 
 V =  dmatrix(0, csr.rows, 0, m);
@@ -226,6 +231,7 @@ free_dmatrix(V,0, csr.rows, 0, m);
 free_dmatrix(H, 0, m, 0, restart);
 free_dmatrix(E, 0, m, 0, nrhs);
 free_dmatrix ( B, 0, csr.rows, 0, nrhs );
+free_dmatrix(T,0,nrhs,0, csr.rows);
 
 exit(EXIT_SUCCESS); //Exit the main function 
 }
@@ -240,9 +246,9 @@ void print_vector(char* pre, double *v, unsigned int size){
       printf("%s", pre);
          for(i = 0; i < size; i++){
          //printf("%.1f ", v[i]);
-         printf("%e \n", v[i]);
+         printf("%e \t", v[i]);
      }
-     printf("\n");
+     printf("\t");
  }
 
      void parse_args(int argc, char *argv[]){

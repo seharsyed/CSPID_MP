@@ -22,7 +22,6 @@ once inside the src folder
   
   3) ./cspid matrixA.mtx
           (Here the matrix instance is matrixA.mtx)
-  4) Enter the no of restart
-            type an no 
- 5) Enter the no of RHS for B 
+          
+  4) Enter the no of RHS for B 
           type any no 

@@ -38,7 +38,7 @@ LAPACKE = -llapacke
 #Include files (Header files)
 #----------------------------------------------------------------------------
 
-INCLUDES = -I../include
+INCLUDES = ../include
 
 #-----------------------------------------------------------------------------
 # Flags for Compilers
@@ -69,14 +69,14 @@ RM = rm -f
 #CSPID compilation
 #-------------------------------------------------------------------------
 
-LIB = $(LIBES) $(LAPACKE) $(CBLAS) $(LAPACK) $(BLA)
+LIB = $(LIBES) $(LAPACKE) $(CBLAS) $(LAPACK) $(BLAS)
 
 COMMON_DEPS = mmio.c 
 
 all: $(TARGET)
 
-cspid: cspid.c $(COMMON_DEPS)
-	$(CC) $(FLAGS) $(INCLUDES)-o cspid.c mmio.c $(LIB)
+cspid: cspid.c $(COMMON_DEPS) $(INCLUDES)
+	$(CC) $(FLAGS) -o cspid cspid.c mmio.c $(LIB)
 	
 clean:
 	$(RM) $(TARGET)	

@@ -20,7 +20,7 @@ once inside the src folder
   
   2) make all  (compiles the C implemenation) 
   
-  3) ./a.out matrixA.mtx
+  3) ./cspid matrixA.mtx
           (Here the matrix instance is matrixA.mtx)
           
   4) Enter the no of RHS for B 

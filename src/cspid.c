@@ -12,8 +12,8 @@
 #include <string.h>
 #include <stddef.h>
 #include <math.h>
-#include <cblas.h>
-#include <lapacke.h>
+//#include <cblas.h>
+//#include <lapacke.h>
 
 #include "mmio.h"
 #include "clock.h"
@@ -31,7 +31,7 @@ double **dmatrix ( int nrl, int nrh, int ncl, int nch );
 void free_dmatrix ( double **m, int nrl, int nrh, int ncl, int nch );
 double  vecnorm(int n, double a1[], double a2[]); 
 void print_matrix(double **arr, int rows, int cols);
-void dgeqrf(int M, int N, double** A, int LDA, double* TAU, double WORK, int LWORK, int INFO );
+//void dgeqrf(int M, int N, double** A, int LDA, double* TAU, double WORK, int LWORK, int INFO );
 
 int main(int argc, char *argv[])
 {
@@ -79,7 +79,7 @@ parse_args(argc, argv);
 /********************************************
  * COO to CSR Matrix - Conversion and loading
  * ********************************************/ 
-     printf("Reading Matrix Market file Data\n");
+     printf("\n\nReading Matrix Market file Data\n");
       // Initialize matrices.
       csr_init_matrix(&csr);
       
@@ -87,7 +87,7 @@ parse_args(argc, argv);
       printf("Loading matrix \"%s\"\n", filename);
       sym = csr_load_matrix(filename, &csr);
     
-     if(sym) printf("Matrix is symmetric\n");
+     if(sym) printf("\n\nMatrix is symmetric\n");
      else    printf("Matrix is general (non-symmetric)\n");
  
       // Print Matrix data
@@ -104,7 +104,7 @@ parse_args(argc, argv);
 // scanf("%d", &restart);
 restart = 10;
 
-printf("Enter the desired  no of right hand sides for matrix B\n");
+printf("\nEnter the desired  no of right hand sides for matrix B\n");
  scanf("%d",&nrhs);
    
    printf(" The value of rows = %d\n",csr.rows);
@@ -163,19 +163,14 @@ tau = (double *)malloc(nrhs* sizeof(double));
 print_vector("\nnorm =\n ", w, nrhs);
 printf("\n");
 /*
-
 //for (k=0;k<csr.rows; k++){
 //e[k] = vecnorm(nrhs, R0[k], R0[k]);
 //}
 //Residual Norm 
-
  //for (k=0; k<csr.rows; k++){
  //relres[k] = e[k]/w[k];
 // }
-
 //print_vector("\n Relative Residual Norm =\n ", relres, csr.rows);
-
-
 /****************************************
 //Initialization of V-space, H and E//
    //Start of while block// 
@@ -221,7 +216,7 @@ iter = 0;
                   a = m by n general matrix A whose QR factorization is to be computed.
                 lda = is the leading dimension of the array specified for a.
                lwork = 0 for best performance
- */
+ /
 lwork =0;
 dgeqrf(csr.rows,nrhs,R0, csr.rows,tau,work, lwork, info);
 
@@ -232,10 +227,8 @@ dgeqrf(csr.rows,nrhs,R0, csr.rows,tau,work, lwork, info);
 /*
 printf("\n\n The V space is \n");
 print_matrix(V, csr.rows, m);
-
 printf("\n\n The Hessenberg matrix is \n");
 print_matrix(H, m, restart);
-
 printf("\n\n The Matrix E is \n");
 print_matrix(E, m, nrhs);*/
 
@@ -307,14 +300,10 @@ void print_matrix(double **arr, int rows, int cols){
 /*************************************
  *Allocating 2D-Array
 Parameters:
-
     Input, int NRL, NRH, the low and high row indices.
-
     Input, int NCL, NCH, the low and high column indices.
-
     Output, double **DMATRIX, a doubly-dimensioned array with
     the requested row and column ranges.
-
  ************************************/
 double **dmatrix ( int nrl, int nrh, int ncl, int nch )
 
@@ -369,15 +358,10 @@ void free_dmatrix ( double **m, int nrl, int nrh, int ncl, int nch )
 /******************************************************************************/
 /*
   Purpose:
-
     FREE_DMATRIX frees a double matrix allocated by DMATRIX 
-
   Parameters:
-
     Input, int NRL, NRH, the low and high row indices.
-
     Input, int NCL, NCH, the low and high column indices.
-
     Input, double **M, the pointer to the doubly-dimensioned array,
     previously created by a call to DMATRIX.
 */
@@ -394,11 +378,8 @@ double vecnorm( int n, double a1[], double a2[])
 
 /******************************************************************************/
 /*Parameters:
-
     Input, int N, the number of entries in the vectors.
-
     Input, double A1[N], A2[N], the two vectors to be considered.
-
     Output, SQRT of the dot product of the vectors.
 */
 
@@ -412,4 +393,3 @@ double vecnorm( int n, double a1[], double a2[])
   }
   return sqrt(value);
 }
-

@@ -12,14 +12,13 @@
 #include <string.h>
 #include <stddef.h>
 #include <math.h>
-#include "cblas.h"
-#include"lapacke.h"
+#include <cblas.h>
+#include <lapacke.h>
 
 #include "mmio.h"
 #include "clock.h"
 #include "coo.h"
 #include "csr.h"
-#include "f2c.h"
 
 /* Reading the Matrix from MM. The matrix is in CSR Format*/
 

@@ -30,11 +30,8 @@ LOADER = $(FC)
 #I have added the path to the static libaries, will resolve the dynamic library 
 #linking issue later. 
  
-BLLIB        = /usr/local/lib/libblas.a
-CBLIB        = /usr/local/lib/libcblas.a
-LAPACKLIB    = /usr/local/lib/liblapack.a
-TMGLIB       = /usr/local/lib/libtmglib.a
-LAPACKELIB   = /usr/local/lib/liblapacke.a
+CBLAS = -lcblas
+LIBES = -lm
 
 
 #----------------------------------------------------------------------------
@@ -72,14 +69,14 @@ RM = rm -f
 #CSPID compilation
 #-------------------------------------------------------------------------
 
-LIBRARIES =	 $(LAPACKELIB) $(LAPACKLIB) $(CBLIB) $(BLLIB);
+LIB = $(LIBES) $(CBLAS)
 
 COMMON_DEPS = mmio.c 
 
 all: $(TARGET)
 
-cspid: cspid.c $(COMMON_DEPS) $(INCLUDES)
-	$(CC) $(FLAGS) -o cspid cspid.c mmio.c
+cspid: cspid.c $(COMMON_DEPS) $(INCLUDES) 
+	$(CC) $(FLAGS) -o cspid cspid.c mmio.c $(LIB)
 	
 clean:
 	$(RM) $(TARGET)	

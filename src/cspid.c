@@ -133,7 +133,7 @@ print_matrix(B, csr.rows, nrhs);
 /*********************************
  * * TODO 
  *********************************/
- /*1. Norm  (status done! but values are not precise something to do with pointer perhaps) 
+ /*1. Norm  (Done!) 
    2. Initialize V, H and E (Done) 
    3. QR factors  (Doing) 
    4. Modified Gram-Schmit Loop (Doing) 
@@ -141,7 +141,7 @@ print_matrix(B, csr.rows, nrhs);
    6. LU factors (Preconditioning) */
 
 //Initialization of vectors for computing norm
-w = (double *)malloc(csr.rows* sizeof(double));
+w = (double *)malloc(nrhs* sizeof(double));
 //e = (double *)malloc(nrhs * sizeof(double));
 //relres = (double *)malloc(nrhs * sizeof(double));
 
@@ -149,17 +149,16 @@ w = (double *)malloc(csr.rows* sizeof(double));
 *Norm and Reidual Norm
 ********************************/
 
-for (k = 0; k<csr.rows;k++){
-w[k] = 0.0;
-  }
-
  printf("\nThe norm of each rhs is \n");
   for (k = 0; k<nrhs;k++){
    w[k] = vecnorm(csr.rows, T[k], T[k]);
-   // printf("%.3f\t", w);
+     if (w[k]==0.0){
+        w[k] = 1.0;
+        }
   } 
 
-print_vector("\nnorm =\n ", w, csr.rows);
+print_vector("\nnorm =\n ", w, nrhs);
+printf("\n");
 /*
 
 //for (k=0;k<csr.rows; k++){

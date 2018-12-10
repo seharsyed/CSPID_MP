@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     MM_typecode matcode;
     char* filename;
     double *w,*e, *relres;
-    double **B, **R0, **V, **H, **E, **scal ;
+    double **B, **R0, *V, **H, **E, **scal ;
     double **T;
     FILE *f;       //This file is used for reading RHS//
     int M, N, nz, nrhs;
@@ -182,7 +182,8 @@ m = restart+nrhs;
 iter = 0;
 
 //for(iter <= maxit) {
-	V =  dmatrix(0, csr.rows, 0, m);    //Orthogonal Subspace V
+//	V =  dmatrix(0, csr.rows, 0, m);    //Orthogonal Subspace V
+        V = calloc(csr.rows*m, sizeof(double));
 	H = dmatrix(0, m, 0, restart);      //Hessenberg Matrix
 	E = dmatrix(0, m, 0, nrhs);
 	scal = dmatrix(0,nrhs,0,nrhs);      //R factor from QR factorization of R0//
@@ -193,11 +194,11 @@ iter = 0;
      		 }
     	}	
 
-	for ( i = 0; i < csr.rows; i++ ) {
-      		for ( j = 0; j < m; j++ ){
+	for ( j = 0; j <m; j++ ) {
+      		for (i = 0; i < csr.rows; i++ ){
        		 V[i][j] = 0.0;
       		}
-    	}
+    */
 
 	for ( i = 0; i < m; i++ ) {
        		for ( j = 0; j < nrhs; j++ ){
@@ -209,8 +210,8 @@ iter = 0;
  * Construction of V space
  * *****************************/
 
-/*CBlas routine for QR factors
- dgeqrf(m, n, a, lda, tau, work, lwork, info);
+/*LAPACKE routine for QR factors
+LAPACKE_ dgeqrf(m, n, a, lda, tau, work, lwork, info);
  Input Arguments: m = number of rows in matrix A used in the computation, 
 		  n = number of columns in matrix A used in the computation.
                   a = m by n general matrix A whose QR factorization is to be computed.
@@ -222,9 +223,8 @@ dgeqrf(csr.rows,nrhs,R0, csr.rows,tau,work, lwork, info);
 
 
 //}  //End of for loop before QR-factors 
-
 // Printing matrices for Debugging 
-/*
+
 printf("\n\n The V space is \n");
 print_matrix(V, csr.rows, m);
 printf("\n\n The Hessenberg matrix is \n");
@@ -232,18 +232,18 @@ print_matrix(H, m, restart);
 printf("\n\n The Matrix E is \n");
 print_matrix(E, m, nrhs);*/
 
-
+//print_matrix(V, csr.rows, m);
 //Free resources  
 free(w);
 //free(relres);
 //free(e);
-free_dmatrix(V,0, csr.rows, 0, m);
+//free_dmatrix(V,0, csr.rows, 0, m);
 free_dmatrix(H, 0, m, 0, restart);
 free_dmatrix(E, 0, m, 0, nrhs);
 free_dmatrix ( B, 0, csr.rows, 0, nrhs );
 free_dmatrix(T,0,nrhs,0, csr.rows);
 free_dmatrix(scal,0,nrhs,0,nrhs);
-
+free(V);
 
 exit(EXIT_SUCCESS); //Exit the main function 
 }// End of main function

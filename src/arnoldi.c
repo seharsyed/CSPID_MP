@@ -30,11 +30,11 @@ rhs = 10;
 
 B = calloc(rows*rhs, sizeof(double));
 w = (double *)malloc(rhs* sizeof(double)); 
-tau = calloc(rows,sizeof(double));
+tau = calloc(rhs,sizeof(double));
 scal = calloc(rhs*rhs, sizeof(double));
 
-for(j =0; j<rhs;j++){
-   for (i = 0; i<rows; i++){
+for(i =0; i<rows;i++){
+   for (j = 0; j<rhs; j++){
           // for(j =0; j<rhs;j++){
                B[i*rhs+j]= randf(0,1);
     // printf("\t%e\t",B[i*rhs+j]);
@@ -46,17 +46,17 @@ print_matrix(B,rows,rhs);
 
 printf("\nQR factorization started\n");
 
-lda = rows;
-info = LAPACKE_dgeqrf(LAPACK_COL_MAJOR, rows, rhs, B, lda, tau );
+lda = rhs;
+info = LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, rows, rhs, B, lda, tau );
 
 print_matrix(B,rows, rhs);
 
-/*
+
 printf("The R factor is\n\n");
-for (j=0;j<rhs;j++){
-  for(i=0;i<rhs;i++){
-             if(i>j){
-                scal[i+j*rhs] = B[i+j*rhs];
+for (i=0;i<rhs;i++){
+  for(j=0;j<rhs;j++){
+             if(i<=j){
+                scal[i*rhs+j] = B[i*rhs+j];
      }
   }
 }

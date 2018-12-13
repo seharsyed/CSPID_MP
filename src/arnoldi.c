@@ -63,6 +63,20 @@ for (i=0;i<rhs;i++){
 
 print_matrix(scal,rhs,rhs);
 
+/* Extracting V as Q factor of B */
+
+printf("\n\nThe Q factor is\n");
+info = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, rows, rhs, rhs, B, lda, tau);
+/* 
+if (info /= 0){ 
+    printf("DQRSL returns info = %d", info);
+    exit;
+  } 
+*/
+
+print_matrix(B, rows, rhs);
+
+
 /*
 for (j = 0;j<rhs;j++){
    for (i = 0;i<rows;i++){

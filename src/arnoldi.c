@@ -32,6 +32,7 @@ B = calloc(rows*rhs, sizeof(double));
 w = (double *)malloc(rhs* sizeof(double)); 
 tau = calloc(rhs,sizeof(double));
 scal = calloc(rhs*rhs, sizeof(double));
+V = calloc(
 
 for(i =0; i<rows;i++){
    for (j = 0; j<rhs; j++){

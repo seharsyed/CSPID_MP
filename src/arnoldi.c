@@ -2,29 +2,30 @@
 #include <stdlib.h>
 #include <math.h>
 #include <lapacke.h>
+#include<string.h>
 
 double randf(double low,double high);
 void print_matrix(double *arr, int rows, int cols);
 double vecnorm( int n, double *a1, double *a2);
 void print_vector(char* pre, double *v, unsigned int size);
+void matriscopy (double * destmat, double * srcmat, int rowcount, int columncount);
 
 int main (int argc, const char * argv[])
 {
 
-double *B,*w,*tau, *scal;
+double *B,*w,*tau, *scal, *V, *H, *E;
 int rows, rhs;
 int i, j, k;
 int info, lda;
-/* I am initializing B as a single pointer matrix as LAPACKE only accepts single pointer. 
-Generate B as random matrix in column major 
-After computing QR factors check the Fortran code for extracting Q 
-Find a way to save csr matrix as single pointer instead of double! 
-then compute sparse matrix matrix multiplication 
+int restart, m;
 
+/* compute sparse matrix matrix multiplication 
 */
 
 rows = 48;
 rhs = 10;
+restart = 10;
+m = restart+rhs; //In matlab m = inner+p
 
 //Initialize and allocate B
 
@@ -32,7 +33,9 @@ B = calloc(rows*rhs, sizeof(double));
 w = (double *)malloc(rhs* sizeof(double)); 
 tau = calloc(rhs,sizeof(double));
 scal = calloc(rhs*rhs, sizeof(double));
-V = calloc(
+V = calloc(rows*rhs, sizeof(double));
+H = calloc(m*restart, sizeof(double));
+E = calloc(m*rhs,sizeof(double));
 
 for(i =0; i<rows;i++){
    for (j = 0; j<rhs; j++){
@@ -68,7 +71,8 @@ print_matrix(scal,rhs,rhs);
 
 printf("\n\nThe Q factor is\n");
 info = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, rows, rhs, rhs, B, lda, tau);
-/* 
+
+/*
 if (info /= 0){ 
     printf("DQRSL returns info = %d", info);
     exit;
@@ -77,7 +81,29 @@ if (info /= 0){
 
 print_matrix(B, rows, rhs);
 
+V=B;
+V = realloc(V,sizeof(double)*rows*m);
 
+/*
+for(i=0;i<rows;i++){
+  for(j=0;j<rhs;j++){
+      V[i*rhs+j]=B[i*rhs+j];
+          // if(j==9){
+         printf("\n\n I am here and my value is %d\n", j);         
+          V[i*rhs+restart+j]=B[i*rhs+j];
+              }
+    
+} 
+}
+*/
+/*
+ for (i = 0; i<rows; i++){
+        int width = (B[i]) + 1;
+*/
+
+
+//V = realloc(V, rows*m*sizeof(double));
+//memcpy (V, B, sizeof(double)*rows*rhs);
 /*
 for (j = 0;j<rhs;j++){
    for (i = 0;i<rows;i++){
@@ -95,10 +121,31 @@ for(j = 0;j <rhs;j++){
 */
 
 //print_vector("\nnorm =\n ", w, rhs);
+
+/*************************************
+Printing Matrix for Debugging
+*************************************/
+
+printf("\n\nThe Orthogonal basis V is:\n");
+print_matrix(V,rows,m);
+
+printf("\n\nThe Hessenberg H is:\n");
+print_matrix(H,m,restart);
+
+printf("\n\nThe Identity matrix E is: \n");
+print_matrix(E,m,rhs);
+
 printf("\n\n");
 
+/******************************
+Free Resources
+******************************/
 free(B);
 free(w);
+free(V);
+free(H);
+free(E);
+free(tau);
 free(scal);
 
 return 0;
@@ -157,4 +204,14 @@ void print_vector(char* pre, double *v, unsigned int size){
       printf("\t");
   }
 
-
+void matriscopy (double * destmat, double * srcmat, int rowcount, int columncount)
+{
+  int i, j;
+  double (*dst)[columncount];
+  double (*src)[columncount];
+  dst = (double (*)[columncount])destmat;
+  src = (double (*)[columncount])srcmat;
+  for (j=0; j<columncount; j++) /* rad-nr */
+    for (i=0; i<rowcount; i++) /* kolumn-nr */
+      dst[j][i] = src[j][i];
+}

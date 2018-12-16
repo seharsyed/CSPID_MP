@@ -33,7 +33,7 @@ B = calloc(rows*rhs, sizeof(double));
 w = (double *)malloc(rhs* sizeof(double)); 
 tau = calloc(rhs,sizeof(double));
 scal = calloc(rhs*rhs, sizeof(double));
-V = calloc(rows*rhs, sizeof(double));
+V = calloc(rhs*rows, sizeof(double));
 H = calloc(m*restart, sizeof(double));
 E = calloc(m*rhs,sizeof(double));
 
@@ -80,9 +80,27 @@ if (info /= 0){
 */
 
 print_matrix(B, rows, rhs);
+printf("\n\n The transpose of B--V is \n");
 
-V=B;
-V = realloc(V,sizeof(double)*rows*m);
+// Allocating the transpose of Q to V//
+for (i =0;i<rows; i++){
+   for (j=0;j<rhs;j++){
+        V[j*rows+i] = B[i*rhs+j];
+}
+}
+print_matrix(V, rhs, rows);
+
+printf("\n\nAfter rellocation\n");
+V = (double*)realloc(V,sizeof(double)*m*rows);
+
+for (i =rhs;i<m;i++){
+  for(j=0;j<rows;j++){
+    V[i*rows+j] = 0.0;
+}
+}
+
+
+print_matrix(V, m, rows);
 
 /*
 for(i=0;i<rows;i++){
@@ -125,10 +143,10 @@ for(j = 0;j <rhs;j++){
 /*************************************
 Printing Matrix for Debugging
 *************************************/
-
+/*
 printf("\n\nThe Orthogonal basis V is:\n");
 print_matrix(V,rows,m);
-
+*/
 printf("\n\nThe Hessenberg H is:\n");
 print_matrix(H,m,restart);
 
@@ -160,7 +178,7 @@ void print_matrix(double *arr, int rows, int cols){
      for(int i = 0; i <rows; i++){
          for (int j=0;j<cols; j++){
  
-                printf("\t%e\t",arr[i*cols+j]);
+                printf("\t%.2f\t",arr[i*cols+j]);
 
         }
        printf("\n");

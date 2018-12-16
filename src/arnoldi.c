@@ -33,7 +33,9 @@ B = calloc(rows*rhs, sizeof(double));
 w = (double *)malloc(rhs* sizeof(double)); 
 tau = calloc(rhs,sizeof(double));
 scal = calloc(rhs*rhs, sizeof(double));
-V = calloc(rhs*rows, sizeof(double));
+
+//V = calloc(rhs*rows, sizeof(double));
+V = calloc(m*rows,sizeof(double));
 H = calloc(m*restart, sizeof(double));
 E = calloc(m*rhs,sizeof(double));
 
@@ -89,20 +91,18 @@ for (i =0;i<rows; i++){
 }
 }
 print_matrix(V, rhs, rows);
-
+/*
 printf("\n\nAfter rellocation\n");
 V = (double*)realloc(V,sizeof(double)*m*rows);
 
 for (i =rhs;i<m;i++){
   for(j=0;j<rows;j++){
     V[i*rows+j] = 0.0;
+  }
 }
-}
 
 
-print_matrix(V, m, rows);
-
-/*
+/*Pointer Artithmetic for allocating values to V
 for(i=0;i<rows;i++){
   for(j=0;j<rhs;j++){
       V[i*rhs+j]=B[i*rhs+j];
@@ -110,7 +110,6 @@ for(i=0;i<rows;i++){
          printf("\n\n I am here and my value is %d\n", j);         
           V[i*rhs+restart+j]=B[i*rhs+j];
               }
-    
 } 
 }
 */
@@ -143,10 +142,10 @@ for(j = 0;j <rhs;j++){
 /*************************************
 Printing Matrix for Debugging
 *************************************/
-/*
+
 printf("\n\nThe Orthogonal basis V is:\n");
-print_matrix(V,rows,m);
-*/
+print_matrix(V,m,rows);
+
 printf("\n\nThe Hessenberg H is:\n");
 print_matrix(H,m,restart);
 

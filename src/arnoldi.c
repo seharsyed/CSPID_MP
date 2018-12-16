@@ -91,18 +91,11 @@ for (i =0;i<rows; i++){
 }
 }
 print_matrix(V, rhs, rows);
-/*
-printf("\n\nAfter rellocation\n");
-V = (double*)realloc(V,sizeof(double)*m*rows);
-
-for (i =rhs;i<m;i++){
-  for(j=0;j<rows;j++){
-    V[i*rows+j] = 0.0;
-  }
-}
 
 
+/********************************************************************
 /*Pointer Artithmetic for allocating values to V
+
 for(i=0;i<rows;i++){
   for(j=0;j<rhs;j++){
       V[i*rhs+j]=B[i*rhs+j];
@@ -114,21 +107,24 @@ for(i=0;i<rows;i++){
 }
 */
 /*
- for (i = 0; i<rows; i++){
-        int width = (B[i]) + 1;
-*/
-
-
-//V = realloc(V, rows*m*sizeof(double));
-//memcpy (V, B, sizeof(double)*rows*rhs);
-/*
 for (j = 0;j<rhs;j++){
    for (i = 0;i<rows;i++){
        printf("%.2f\t", B[i*rhs+j]);
 }
 printf("\n");
-}
+}  I will come to it later to understand  why this technique didn't work 
+************************************************************************
 
+/*****************************
+Modified Gram-Schmidt Portion
+******************************/
+
+//Sparse Matrix Vector Multiplication 
+csr_mvp(CSR_Matrix *m, double *x, double *y);
+
+
+
+/*
 for(j = 0;j <rhs;j++){
    for(i = 0;i <rows;i++){
       w[j] = vecnorm(i, &B[j*rows], &B[j*rows]);

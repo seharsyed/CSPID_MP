@@ -31,7 +31,7 @@ double **dmatrix ( int nrl, int nrh, int ncl, int nch );
 void free_dmatrix ( double **m, int nrl, int nrh, int ncl, int nch );
 double  vecnorm(int n, double a1[], double a2[]); 
 void print_matrix(double **arr, int rows, int cols);
-//void dgeqrf(int M, int N, double** A, int LDA, double* TAU, double WORK, int LWORK, int INFO );
+
 
 int main(int argc, char *argv[])
 {
@@ -162,6 +162,10 @@ tau = (double *)malloc(nrhs* sizeof(double));
 
 print_vector("\nnorm =\n ", w, nrhs);
 printf("\n");
+
+//Check the routine of Sparse Matrix Vector Multiplication//
+
+
 /*
 //for (k=0;k<csr.rows; k++){
 //e[k] = vecnorm(nrhs, R0[k], R0[k]);
@@ -193,7 +197,7 @@ iter = 0;
        			 H[i][j] = 0.0;
      		 }
     	}	
-
+/*
 	for ( j = 0; j <m; j++ ) {
       		for (i = 0; i < csr.rows; i++ ){
        		 V[i][j] = 0.0;

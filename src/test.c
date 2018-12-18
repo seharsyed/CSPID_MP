@@ -10,10 +10,11 @@ Implementation of Block Arnoldi
 #include <string.h>
 #include <stddef.h>
 
-#include <mmio.h>
+//#include <mmio.h>
 #include "clock.h"
 #include "coo.h"
 #include "csr.h"
+//#include <lapacke.h>
 
 unsigned int iterations=1000;
 
@@ -108,7 +109,7 @@ print_matrix(B,rows,rhs);
 /***********************************
 QR Factorization 
 ***********************************/
-
+/*
 printf("\nQR factorization started\n");
 
 lda = rhs;
@@ -129,7 +130,7 @@ for (i=0;i<rhs;i++){
 print_matrix(scal,rhs,rhs);
 
 /* Extracting V as Q factor of B */
-
+/*
 printf("\n\nThe Q factor is\n");
 info = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, rows, rhs, rhs, B, lda, tau);
 
@@ -140,7 +141,8 @@ if (info /= 0){
   } 
 */
 
-print_matrix(B, rows, rhs);
+//print_matrix(B, rows, rhs);
+
 printf("\n\n The transpose of B--V is \n");
 
 // Allocating the transpose of Q to V//

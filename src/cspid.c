@@ -13,9 +13,9 @@
 #include <stddef.h>
 #include <math.h>
 //#include <cblas.h>
-//#include <lapacke.h>
+#include <lapacke.h>
 
-#include "mmio.h"
+//#include "mmio.h"
 #include "clock.h"
 #include "coo.h"
 #include "csr.h"
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     int work, lwork, info;
     int bloc;
     int restart, iter, maxit, m; //m = inner+p from matlab code//
-    int *I, *J, k, j;
+    int *Iind, *Jind, k, j;
     double *val, *tau;
     double a;
 

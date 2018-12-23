@@ -31,7 +31,7 @@ double **dmatrix ( int nrl, int nrh, int ncl, int nch );
 void free_dmatrix ( double **m, int nrl, int nrh, int ncl, int nch );
 double  vecnorm(int n, double a1[], double a2[]); 
 void print_matrix(double **arr, int rows, int cols);
-
+void print_1matrix(double *arr, int rows, int cols);
 
 int main(int argc, char *argv[])
 {
@@ -46,11 +46,11 @@ int main(int argc, char *argv[])
     char* filename;
     double *w,*e, *relres;
     double **B, **R0, *V, **H, **E, **scal ;
-    double **T;
+    double **T, *B2;
     FILE *f;       //This file is used for reading RHS//
     int M, N, nz, nrhs;
     int work, lwork, info;
-    int bloc;
+    int bloc, lda;
     int restart, iter, maxit, m; //m = inner+p from matlab code//
     int *Iind, *Jind, k, j;
     double *val, *tau;
@@ -148,6 +148,7 @@ w = (double *)malloc(nrhs* sizeof(double));    //Allocation of vector Norm//
 //e = (double *)malloc(nrhs * sizeof(double));  
 //relres = (double *)malloc(nrhs * sizeof(double));  //Allocation of Relative Residual Vector//
 tau = (double *)malloc(nrhs* sizeof(double));  
+B2 = (double *)malloc(nrhs*csr.rows*sizeof(double));
 /********************************
 *Norm and Reidual Norm
 ********************************/
@@ -162,6 +163,26 @@ tau = (double *)malloc(nrhs* sizeof(double));
 
 print_vector("\nnorm =\n ", w, nrhs);
 printf("\n");
+
+/* Passing 2D to 1D */
+k = 0;
+for(i=0;i<csr.rows;i++){
+		for(j=0;j<nrhs;j++){
+		
+			//printf("%d   ",arr[i][j]);
+			B2[k]=B[i][j];
+			k++;
+		}
+	}
+
+printf("\nQR factorization started\n");
+ 
+ lda = nrhs;
+ info = LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, csr.rows, nrhs, B2, lda, tau );
+ 
+ print_1matrix(B2,csr.rows, nrhs);
+ 
+ 
 
 //Check the routine of Sparse Matrix Vector Multiplication//
 
@@ -248,6 +269,7 @@ free_dmatrix ( B, 0, csr.rows, 0, nrhs );
 free_dmatrix(T,0,nrhs,0, csr.rows);
 free_dmatrix(scal,0,nrhs,0,nrhs);
 free(V);
+free(B2);
 
 exit(EXIT_SUCCESS); //Exit the main function 
 }// End of main function
@@ -397,3 +419,16 @@ double vecnorm( int n, double a1[], double a2[])
   }
   return sqrt(value);
 }
+
+void print_1matrix(double *arr, int rows, int cols){
+ 
+      for(int i = 0; i <rows; i++){
+          for (int j=0;j<cols; j++){
+ 
+                 printf("\t%.2f\t",arr[i*cols+j]);
+ 
+         }
+        printf("\n");
+      }
+  }
+

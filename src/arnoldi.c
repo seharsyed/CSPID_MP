@@ -23,11 +23,11 @@ int main (int argc, char * argv[])
 {
 
 double *B,*w,*tau, *scal, *V, *H, *E;
-double *relres, *e;
+double *relres, *e, *nrm;
 int rows, rhs;
 int M, N, nz, work, lwork;
-int iter, i, j, k;
-int info, lda;
+int initer, iter, i, j, k;
+int info,ldb,lda, k_in;
 int sym;
 int ret_code;
 CSR_Matrix csr;
@@ -35,8 +35,8 @@ int restart, m;
 Clock clock;
 MM_typecode matcode;
 char* filename;
-double **T;
-
+double **T1;
+double *T;
 /* compute sparse matrix matrix multiplication 
 */
 
@@ -95,11 +95,12 @@ m = restart+rhs; //In matlab m = inner+p
 //Initialize and allocate B
 
 B = calloc(rows*rhs, sizeof(double));
-w = calloc(rhs, sizeof(double));  //Allocation of Vector Norm//
+nrm = calloc(rhs, sizeof(double)); 
+w = calloc(rows, sizeof(double));  //Allocation of Vector Norm//
 relres = (double *)malloc(rhs* sizeof(double)); // Allocation of Relative Residual//
 tau = calloc(rhs,sizeof(double));
 scal = calloc(rhs*rhs, sizeof(double));
-
+T = calloc(rhs*rows,sizeof(double));
 //V = calloc(rhs*rows, sizeof(double));
 V = calloc(m*rows,sizeof(double));
 H = calloc(m*restart, sizeof(double));
@@ -121,16 +122,15 @@ print_matrix(B,rows,rhs);
 /***********************************************************
 *Transpose of B/ Calculation Norm and Relative Residual Norm 
 ************************************************************/
-/*
+
 for(i=0; i<rows; ++i){
         for(j=0; j<rhs; ++j){
              T[j*rows+i] = B[i*rhs+j];
          }
 }
 
-*/
 
-T = dmatrix(0,rhs,0, csr.rows);
+/*T = dmatrix(0,rhs,0, csr.rows);
 k = 0; 
     for(i=0; i<csr.rows; i++){
          for(j=0; j<rhs; j++){
@@ -143,26 +143,36 @@ printf("The transpose of B is\n");
 print_matrix(T, rhs, rows);
 */
 
+
 printf("\n\nThe norm of each RHS is \n");
 
-   for (k = 0; k<rhs;k++){
-    w[k] = vecnorm(rows,T[k], T[k]);
-      if (w[k]==0.0){
-         w[k] = 1.0;
+ldb = rows;
+  for (k = 0; k<rhs;k++){
+        // for (i = 0; i <rows;i++){
+    nrm[k] = vecnorm(rows,&T[k*ldb], &T[k*ldb]);
+      if (nrm[k]==0.0){
+         nrm[k] = 1.0;
          }
 }
  
-print_vector("\nnorm =\n ", w, rhs);
+print_vector("\nnorm =\n ", nrm, rhs);
  printf("\n");
 
-//for (k=0;k<csr.rows; k++){
- //e[k] = vecnorm(nrhs, R0[k], R0[k]);
- //}
+
+/*************************
+*Relative Residual Norm 
+**************************/
+
+/*
+for (k=0;k<csr.rows; k++){
+ e[k] = vecnorm(nrhs, R0[k], R0[k]);
+ }
  //Residual Norm 
-  //for (k=0; k<csr.rows; k++){
-  //relres[k] = e[k]/w[k];
- // }
- //print_vector("\n Relative Residual Norm =\n ", relres, csr.rows);
+  for (k=0; k<csr.rows; k++){
+  relres[k] = e[k]/w[k];
+  }
+ print_vector("\n Relative Residual Norm =\n ", relres, csr.rows);
+*/
 
 
 /********************
@@ -202,7 +212,7 @@ if (info /= 0){
 */
 
 print_matrix(B, rows, rhs);
-printf("\n\n The transpose of B--V is \n");
+//printf("\n\n The transpose of B--V is \n");
 
 // Allocating the transpose of Q to V//
 for (i =0;i<rows; i++){
@@ -210,7 +220,7 @@ for (i =0;i<rows; i++){
         V[j*rows+i] = B[i*rhs+j];
 }
 }
-print_matrix(V, rhs, rows);
+//print_matrix(V, rhs, rows);
 
 
 /********************************************************************
@@ -237,12 +247,19 @@ printf("\n");
 /*****************************
 Modified Gram-Schmidt Portion
 ******************************/
-
+/*
+csr_mvp_sym2(&csr,&V[9],w);
+printf("\nThe first row of V orthogonal is \nn");
+print_vector("\nV[3]\n", &V[7], rows);
+ 
 //Sparse Matrix Vector Multiplication 
-//csr_mvp(CSR_Matrix *m, double *x, double *y);
+/*for (int initer = rhs;initer<m-2;initer++){
+         k_in = initer - rhs+1;
+            csr_mvp_sym2(&csr,&V[k_in],w);
 
+}*/
 
-
+//print_vector("\nw =\n ", w, rows);
 /*
 for(j = 0;j <rhs;j++){
    for(i = 0;i <rows;i++){
@@ -328,7 +345,7 @@ void print_vector(char* pre, double *v, unsigned int size){
         unsigned int i;
        printf("%s", pre);
          for(i = 0; i < size; i++){
-          //printf("%.1f ", v[i]);
+//          printf("%.2f\t ", v[i]);
           printf("%e \t", v[i]);
       }
       printf("\t");

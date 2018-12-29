@@ -18,6 +18,7 @@ double vecnorm( int n, double a1[], double a2[]);
 void print_vector(char* pre, double *v, unsigned int size);
 double **dmatrix ( int nrl, int nrh, int ncl, int nch );
 void matriscopy (double * destmat, double * srcmat, int rowcount, int columncount);
+double dot_product(double v[], double u[],  int n);
 
 int main (int argc, char * argv[])
 {
@@ -247,17 +248,21 @@ printf("\n");
 /*****************************
 Modified Gram-Schmidt Portion
 ******************************/
-/*
-csr_mvp_sym2(&csr,&V[9],w);
-printf("\nThe first row of V orthogonal is \nn");
-print_vector("\nV[3]\n", &V[7], rows);
+//print_vector("\nV[6]\n", &V[6*ldb], rows);
+//csr_mvp_sym2(&csr,&V[10*ldb],w);
+//printf("\nThe first row of V orthogonal is \nn");
+//print_vector("\nV[1]\n", &V[1*ldb], rows);
  
 //Sparse Matrix Vector Multiplication 
-/*for (int initer = rhs;initer<m-2;initer++){
-         k_in = initer - rhs+1;
-            csr_mvp_sym2(&csr,&V[k_in],w);
 
-}*/
+for (int initer = rhs;initer<m;initer++){
+         k_in = initer - rhs;
+            csr_mvp_sym2(&csr,&V[k_in*ldb],w);
+           for (i = 0;i <initer; i++){
+                  H[i*restart+k_in]= dot_product(&V[i*ldb], w, rows);
+            }
+
+}
 
 //print_vector("\nw =\n ", w, rows);
 /*
@@ -268,7 +273,7 @@ for(j = 0;j <rhs;j++){
 }
 */
 
-//print_vector("\nnorm =\n ", w, rhs);
+print_vector("\nMVM =\n ", w, rows);
 
 /*************************************
 Printing Matrix for Debugging
@@ -277,10 +282,10 @@ Printing Matrix for Debugging
 printf("\n\nThe Orthogonal basis V is:\n");
 print_matrix(V,m,rows);
 
-/*
+
 printf("\n\nThe Hessenberg H is:\n");
 print_matrix(H,m,restart);
-
+/*
 printf("\n\nThe Identity matrix E is: \n");
 print_matrix(E,m,rhs);
 */
@@ -309,7 +314,7 @@ void print_matrix(double *arr, int rows, int cols){
      for(int i = 0; i <rows; i++){
          for (int j=0;j<cols; j++){
  
-                printf("\t%.2f\t",arr[i*cols+j]);
+                printf("\t%e\t",arr[i*cols+j]);
 
         }
        printf("\n");
@@ -345,7 +350,7 @@ void print_vector(char* pre, double *v, unsigned int size){
         unsigned int i;
        printf("%s", pre);
          for(i = 0; i < size; i++){
-//          printf("%.2f\t ", v[i]);
+//          printf("%.3f\t ", v[i]);
           printf("%e \t", v[i]);
       }
       printf("\t");
@@ -421,4 +426,12 @@ void matriscopy (double * destmat, double * srcmat, int rowcount, int columncoun
   for (j=0; j<columncount; j++) /* rad-nr */
     for (i=0; i<rowcount; i++) /* kolumn-nr */
       dst[j][i] = src[j][i];
+}
+
+double dot_product(double v[], double u[], int n)
+{
+    double result = 0.0;
+    for (int i = 0; i < n; i++)
+        result += v[i]*u[i];
+    return result;
 }

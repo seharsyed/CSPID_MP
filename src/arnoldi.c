@@ -4,6 +4,7 @@
 #include <math.h>
 #include <lapacke.h>
 #include <string.h>
+#include <cblas.h>
 
 #include "clock.h"
 #include "coo.h"
@@ -19,12 +20,13 @@ void print_vector(char* pre, double *v, unsigned int size);
 double **dmatrix ( int nrl, int nrh, int ncl, int nch );
 void matriscopy (double * destmat, double * srcmat, int rowcount, int columncount);
 double dot_product(double v[], double u[],  int n);
+void subtract(double xx[], double yy[], double result[], int num);
 
 int main (int argc, char * argv[])
 {
 
 double *B,*w,*tau, *scal, *V, *H, *E;
-double *relres, *e, *nrm;
+double *relres, *e, *nrm, *y;
 int rows, rhs;
 int M, N, nz, work, lwork;
 int initer, iter, i, j, k;
@@ -98,6 +100,7 @@ m = restart+rhs; //In matlab m = inner+p
 B = calloc(rows*rhs, sizeof(double));
 nrm = calloc(rhs, sizeof(double)); 
 w = calloc(rows, sizeof(double));  //Allocation of Vector Norm//
+y = calloc(rows, sizeof(double));  //Allocation of temperoray vector//
 relres = (double *)malloc(rhs* sizeof(double)); // Allocation of Relative Residual//
 tau = calloc(rhs,sizeof(double));
 scal = calloc(rhs*rhs, sizeof(double));
@@ -117,8 +120,8 @@ for(i =0; i<rows;i++){
     }
 }
 
-printf("\n\nThe randomly generated RHS is\n"); 
-print_matrix(B,rows,rhs);
+//printf("\n\nThe randomly generated RHS is\n"); 
+//print_matrix(B,rows,rhs);
 
 /***********************************************************
 *Transpose of B/ Calculation Norm and Relative Residual Norm 
@@ -186,10 +189,10 @@ printf("\nQR factorization started\n");
 lda = rhs;
 info = LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, rows, rhs, B, lda, tau );
 
-print_matrix(B,rows, rhs);
+//print_matrix(B,rows, rhs);
 
 
-printf("The R factor is\n\n");
+//printf("The R factor is\n\n");
 for (i=0;i<rhs;i++){
   for(j=0;j<rhs;j++){
              if(i<=j){
@@ -198,11 +201,11 @@ for (i=0;i<rhs;i++){
   }
 }
 
-print_matrix(scal,rhs,rhs);
+//print_matrix(scal,rhs,rhs);
 
 /* Extracting V as Q factor of B */
 
-printf("\n\nThe Q factor is\n");
+//printf("\n\nThe Q factor is\n");
 info = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, rows, rhs, rhs, B, lda, tau);
 
 /*
@@ -212,7 +215,7 @@ if (info /= 0){
   } 
 */
 
-print_matrix(B, rows, rhs);
+//print_matrix(B, rows, rhs);
 //printf("\n\n The transpose of B--V is \n");
 
 // Allocating the transpose of Q to V//
@@ -222,46 +225,25 @@ for (i =0;i<rows; i++){
 }
 }
 //print_matrix(V, rhs, rows);
-
-
-/********************************************************************
-/*Pointer Artithmetic for allocating values to V
-for(i=0;i<rows;i++){
-  for(j=0;j<rhs;j++){
-      V[i*rhs+j]=B[i*rhs+j];
-          // if(j==9){
-         printf("\n\n I am here and my value is %d\n", j);         
-          V[i*rhs+restart+j]=B[i*rhs+j];
-              }
-} 
-}
-*/
-/*
-for (j = 0;j<rhs;j++){
-   for (i = 0;i<rows;i++){
-       printf("%.2f\t", B[i*rhs+j]);
-}
-printf("\n");
-}  I will come to it later to understand  why this technique didn't work 
-************************************************************************
-
+printf("\n\nQR Factorization, extraction of V and R completed successfully\n");
 /*****************************
-Modified Gram-Schmidt Portion
+Block Arnoldi Variant
 ******************************/
-//print_vector("\nV[6]\n", &V[6*ldb], rows);
-//csr_mvp_sym2(&csr,&V[10*ldb],w);
-//printf("\nThe first row of V orthogonal is \nn");
-//print_vector("\nV[1]\n", &V[1*ldb], rows);
- 
-//Sparse Matrix Vector Multiplication 
 
 for (int initer = rhs;initer<m;initer++){
          k_in = initer - rhs;
-            csr_mvp_sym2(&csr,&V[k_in*ldb],w);
+            csr_mvp_sym2(&csr,&V[k_in*ldb],w); //Sparse-Matrix Vector Multiplication 
+        /**********************
+         Modified Gram-Schmidt 
+         **********************/
            for (i = 0;i <initer; i++){
                   H[i*restart+k_in]= dot_product(&V[i*ldb], w, rows);
-            }
+                     //w = w- H[i*restart+k_in]*V[i*ldb];
+                     cblas_daxpy (rows,-H[i*restart+k_in], &V[i*ldb],1, w,1);
 
+                                               
+            }
+          //   H[(initer+1)*restart+k_in] = vecnorm(
 }
 
 //print_vector("\nw =\n ", w, rows);
@@ -270,18 +252,17 @@ for(j = 0;j <rhs;j++){
    for(i = 0;i <rows;i++){
       w[j] = vecnorm(i, &B[j*rows], &B[j*rows]);
    }  
-}
-*/
-
-print_vector("\nMVM =\n ", w, rows);
+}*/
 
 /*************************************
 Printing Matrix for Debugging
 *************************************/
+print_vector("\nThe vector w after multiplication is  =\n ", w, rows);
 
+/*
 printf("\n\nThe Orthogonal basis V is:\n");
 print_matrix(V,m,rows);
-
+*/
 
 printf("\n\nThe Hessenberg H is:\n");
 print_matrix(H,m,restart);
@@ -314,7 +295,7 @@ void print_matrix(double *arr, int rows, int cols){
      for(int i = 0; i <rows; i++){
          for (int j=0;j<cols; j++){
  
-                printf("\t%e\t",arr[i*cols+j]);
+                printf("\t%1.2e\t",arr[i*cols+j]);
 
         }
        printf("\n");
@@ -351,7 +332,7 @@ void print_vector(char* pre, double *v, unsigned int size){
        printf("%s", pre);
          for(i = 0; i < size; i++){
 //          printf("%.3f\t ", v[i]);
-          printf("%e \t", v[i]);
+          printf("%e \n", v[i]);
       }
       printf("\t");
   }
@@ -434,4 +415,10 @@ double dot_product(double v[], double u[], int n)
     for (int i = 0; i < n; i++)
         result += v[i]*u[i];
     return result;
+}
+
+void subtract(double xx[], double yy[], double result[], int num) {
+    for (int ii = 0; ii < num; ii++) {
+        result[ii] = xx[ii]+yy[ii];
+    }
 }

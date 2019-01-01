@@ -1,434 +1,426 @@
-/************************************
-  This is going to be the main file
- *************************************
- Author:  Sehar Naveed
- Institute:  Unibz
- Date: November 12, 2018
-***************************************/
-/*Implementation of Block Arnoldi*/
-
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stddef.h>
 #include <math.h>
-//#include <cblas.h>
 #include <lapacke.h>
+#include <string.h>
+#include <cblas.h>
 
-//#include "mmio.h"
 #include "clock.h"
 #include "coo.h"
 #include "csr.h"
 
-/* Reading the Matrix from MM. The matrix is in CSR Format*/
-
-unsigned int maxit=1000;
+unsigned int maxit = 1000;
 
 void parse_args(int argc, char *argv[]);
-void print_vector(char* pre, double *v, unsigned int size);
 double randf(double low,double high);
+void print_matrix(double *arr, int rows, int cols);
+double vecnorm( int n, double a1[], double a2[]);
+void print_vector(char* pre, double *v, unsigned int size);
 double **dmatrix ( int nrl, int nrh, int ncl, int nch );
-void free_dmatrix ( double **m, int nrl, int nrh, int ncl, int nch );
-double  vecnorm(int n, double a1[], double a2[]); 
-void print_matrix(double **arr, int rows, int cols);
-void print_1matrix(double *arr, int rows, int cols);
+void matriscopy (double * destmat, double * srcmat, int rowcount, int columncount);
+double dot_product(double v[], double u[],  int n);
+void subtract(double xx[], double yy[], double result[], int num);
 
-int main(int argc, char *argv[])
+int main (int argc, char * argv[])
 {
-    unsigned int i;
-    int sym;
-    int ret_code;
-    CSR_Matrix csr;
-    //COO_Matrix coo;//
-    //int sym1;//
-    Clock clock;
-    MM_typecode matcode;
-    char* filename;
-    double *w,*e, *relres;
-    double **B, **R0, *V, **H, **E, **scal ;
-    double **T, *B2;
-    FILE *f;       //This file is used for reading RHS//
-    int M, N, nz, nrhs;
-    int work, lwork, info;
-    int bloc, lda;
-    int restart, iter, maxit, m; //m = inner+p from matlab code//
-    int *Iind, *Jind, k, j;
-    double *val, *tau;
-    double a;
+
+double *B,*w,*tau, *scal, *V, *H, *E;
+double *relres, *e, *nrm, *y;
+int rows, rhs;
+int M, N, nz, work, lwork;
+int initer, iter, i, j, k;
+int info,ldb,lda, k_in;
+int sym;
+int ret_code;
+CSR_Matrix csr;
+int restart, m;
+Clock clock;
+MM_typecode matcode;
+char* filename;
+double **T1;
+double *T;
+/* compute sparse matrix matrix multiplication 
+*/
 
 parse_args(argc, argv);
+ 
+filename = argv[1];  //Passing on the file 
 
- filename = argv[1];
-
+/***********************************************************
+* Reading the Matrix from MM. The matrix is in CSR Format*
+************************************************************/
  /***************************************
-  * If the matrix Instance is COO
-  * ***********************************/
+    * If the matrix Instance is COO
+    * ***********************************/
 
-      //Initialize COO Matrix first//
-     // coo_init_matrix(&coo);
-
-      //Load COO Matrix
-     // printf("Loading matrix \"%s\"\n", filename);
-      
-     // sym1 = coo_load_matrix(filename, &coo);
-
-     // Print Matrix data
-     // printf("COO matrix data:\n");
-     // coo_print_matrix(&coo);
-
-/********************************************
- * COO to CSR Matrix - Conversion and loading
- * ********************************************/ 
-     printf("\n\nReading Matrix Market file Data\n");
-      // Initialize matrices.
-      csr_init_matrix(&csr);
-      
-     // Load matrix from file into COO.
-      printf("Loading matrix \"%s\"\n", filename);
-      sym = csr_load_matrix(filename, &csr);
-    
-     if(sym) printf("\n\nMatrix is symmetric\n");
-     else    printf("Matrix is general (non-symmetric)\n");
+       //Initialize COO Matrix first//
+      // coo_init_matrix(&coo);
+  
+        //Load COO Matrix
+       // printf("Loading matrix \"%s\"\n", filename);
  
+      // sym1 = coo_load_matrix(filename, &coo);
+  
       // Print Matrix data
-//      printf("CSR matrix data:\n");
-  //    csr_print_matrix(&csr);
-
-       printf("\n\nReading : Successful\n");
-/*****************************************
- *Random Right Hand Side Generation 
- ****************************************/
-
-    //Random Matrix Generation for RHS//
-// printf("Enter the restart value = \n ");
-// scanf("%d", &restart);
-restart = 10;
-
-printf("\nEnter the desired  no of right hand sides for matrix B\n");
- scanf("%d",&nrhs);
-   
-   printf(" The value of rows = %d\n",csr.rows);
-   printf(" The value of cols = %d\n",nrhs);
+       // printf("COO matrix data:\n");
+       // coo_print_matrix(&coo);
+  
+  /********************************************
+   * COO to CSR Matrix - Conversion and loading
+   * ********************************************/
+       printf("\n\nReading Matrix Market file Data\n");
+        // Initialize matrices.
+       csr_init_matrix(&csr);
+  
+       // Load matrix from file into COO.
+        printf("Loading matrix \"%s\"\n", filename);
+       sym = csr_load_matrix(filename, &csr);
+  
+       if(sym) printf("\n\nMatrix is symmetric\n");
+      else    printf("Matrix is general (non-symmetric)\n");
+  
+       // Print Matrix data
+   //      printf("CSR matrix data:\n");
+   //    csr_print_matrix(&csr);
  
-  B = dmatrix(0,csr.rows, 0, nrhs);
+        printf("\n\nReading : Successful\n");
 
-  for(i = 0; i <csr.rows; i++){
-	  for (j=0;j<nrhs; j++){
-              B[i][j] = randf(0,1);
-      }
-    }
-
-print_matrix(B, csr.rows, nrhs);
-
-//Temperoray Transpose of B 
-  T = dmatrix(0,nrhs,0, csr.rows);
-
-   for(i=0; i<csr.rows; ++i)
-        for(j=0; j<nrhs; ++j)
-        {
-            T[j][i] = B[i][j];
-        }
-
-//printf("The transpose of B is\n");
-//print_matrix(T, nrhs, csr.rows);
-
-
-/*********************************
- * * TODO 
- *********************************/
- /*1. Norm  (Done!) 
-   2. Initialize V, H and E (Done) 
-   3. QR factors  (Doing) 
-   4. Modified Gram-Schmit Loop (Doing) 
-   5. Least Square
-   6. LU factors (Preconditioning) */
-
-//Initialization of vectors for computing norm
-w = (double *)malloc(nrhs* sizeof(double));    //Allocation of vector Norm//
-//e = (double *)malloc(nrhs * sizeof(double));  
-//relres = (double *)malloc(nrhs * sizeof(double));  //Allocation of Relative Residual Vector//
-tau = (double *)malloc(nrhs* sizeof(double));  
-B2 = (double *)malloc(nrhs*csr.rows*sizeof(double));
 /********************************
-*Norm and Reidual Norm
+*Initialization 
 ********************************/
+iter = 0;
+rows = csr.rows;
+rhs = 10;
+restart = 10;
+m = restart+rhs; //In matlab m = inner+p
 
- printf("\nThe norm of each rhs is \n");
-  for (k = 0; k<nrhs;k++){
-   w[k] = vecnorm(csr.rows, T[k], T[k]);
-     if (w[k]==0.0){
-        w[k] = 1.0;
+//Initialize and allocate B
+
+B = calloc(rows*rhs, sizeof(double));
+nrm = calloc(rhs, sizeof(double)); 
+w = calloc(rows, sizeof(double));  //Allocation of Vector Norm//
+y = calloc(rows, sizeof(double));  //Allocation of temperoray vector//
+relres = (double *)malloc(rhs* sizeof(double)); // Allocation of Relative Residual//
+tau = calloc(rhs,sizeof(double));
+scal = calloc(rhs*rhs, sizeof(double));
+T = calloc(rhs*rows,sizeof(double));
+//V = calloc(rhs*rows, sizeof(double));
+V = calloc(m*rows,sizeof(double));
+H = calloc(m*restart, sizeof(double));
+E = calloc(m*rhs,sizeof(double));
+
+/*******************************
+*Generate Random RHS Matrix 
+*******************************/
+
+for(i =0; i<rows;i++){
+   for (j = 0; j<rhs; j++){
+               B[i*rhs+j]= randf(0,1);
+    }
+}
+
+//printf("\n\nThe randomly generated RHS is\n"); 
+//print_matrix(B,rows,rhs);
+
+/***********************************************************
+*Transpose of B/ Calculation Norm and Relative Residual Norm 
+************************************************************/
+
+for(i=0; i<rows; ++i){
+        for(j=0; j<rhs; ++j){
+             T[j*rows+i] = B[i*rhs+j];
+         }
+}
+
+
+/*T = dmatrix(0,rhs,0, csr.rows);
+k = 0; 
+    for(i=0; i<csr.rows; i++){
+         for(j=0; j<rhs; j++){
+            T[j][i] = B[k];
+            k++;
         }
-  } 
+}
+/*
+printf("The transpose of B is\n");
+print_matrix(T, rhs, rows);
+*/
 
-print_vector("\nnorm =\n ", w, nrhs);
-printf("\n");
 
-/* Passing 2D to 1D */
-k = 0;
-for(i=0;i<csr.rows;i++){
-		for(j=0;j<nrhs;j++){
-		
-			//printf("%d   ",arr[i][j]);
-			B2[k]=B[i][j];
-			k++;
-		}
-	}
+printf("\n\nThe norm of each RHS is \n");
+
+ldb = rows;
+  for (k = 0; k<rhs;k++){
+        // for (i = 0; i <rows;i++){
+    nrm[k] = vecnorm(rows,&T[k*ldb], &T[k*ldb]);
+      if (nrm[k]==0.0){
+         nrm[k] = 1.0;
+         }
+}
+ 
+print_vector("\nnorm =\n ", nrm, rhs);
+ printf("\n");
+
+
+/*************************
+*Relative Residual Norm 
+**************************/
+
+/*
+for (k=0;k<csr.rows; k++){
+ e[k] = vecnorm(nrhs, R0[k], R0[k]);
+ }
+ //Residual Norm 
+  for (k=0; k<csr.rows; k++){
+  relres[k] = e[k]/w[k];
+  }
+ print_vector("\n Relative Residual Norm =\n ", relres, csr.rows);
+*/
+
+
+/********************
+QR FACTORS 
+*********************/
+
 
 printf("\nQR factorization started\n");
- 
- lda = nrhs;
- info = LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, csr.rows, nrhs, B2, lda, tau );
- 
- print_1matrix(B2,csr.rows, nrhs);
- 
- 
 
-//Check the routine of Sparse Matrix Vector Multiplication//
+lda = rhs;
+info = LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, rows, rhs, B, lda, tau );
 
+//print_matrix(B,rows, rhs);
+
+
+//printf("The R factor is\n\n");
+for (i=0;i<rhs;i++){
+  for(j=0;j<rhs;j++){
+             if(i<=j){
+                scal[i*rhs+j] = B[i*rhs+j];
+     }
+  }
+}
+
+//print_matrix(scal,rhs,rhs);
+
+/* Extracting V as Q factor of B */
+
+//printf("\n\nThe Q factor is\n");
+info = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, rows, rhs, rhs, B, lda, tau);
 
 /*
-//for (k=0;k<csr.rows; k++){
-//e[k] = vecnorm(nrhs, R0[k], R0[k]);
-//}
-//Residual Norm 
- //for (k=0; k<csr.rows; k++){
- //relres[k] = e[k]/w[k];
-// }
-//print_vector("\n Relative Residual Norm =\n ", relres, csr.rows);
-/****************************************
-//Initialization of V-space, H and E//
-   //Start of while block// 
-****************************************/
-//R0 = B-A*X, where X = 0.0//
+if (info /= 0){ 
+    printf("DQRSL returns info = %d", info);
+    exit;
+  } 
+*/
 
-R0 = B;               //Here I will add the Multiplication of co-efficient matrix with initial guess// 
-m = restart+nrhs;
-iter = 0;
+//print_matrix(B, rows, rhs);
+//printf("\n\n The transpose of B--V is \n");
 
-//for(iter <= maxit) {
-//	V =  dmatrix(0, csr.rows, 0, m);    //Orthogonal Subspace V
-        V = calloc(csr.rows*m, sizeof(double));
-	H = dmatrix(0, m, 0, restart);      //Hessenberg Matrix
-	E = dmatrix(0, m, 0, nrhs);
-	scal = dmatrix(0,nrhs,0,nrhs);      //R factor from QR factorization of R0//
+// Allocating the transpose of Q to V//
+for (i =0;i<rows; i++){
+   for (j=0;j<rhs;j++){
+        V[j*rows+i] = B[i*rhs+j];
+}
+}
+//print_matrix(V, rhs, rows);
+printf("\n\nQR Factorization, extraction of V and R completed successfully\n");
+/*****************************
+Block Arnoldi Variant
+******************************/
 
-	for ( i = 0; i < m; i++ ) {
-      		for ( j = 0; j < restart; j++ ) {
-       			 H[i][j] = 0.0;
-     		 }
-    	}	
+for (int initer = rhs;initer<m;initer++){
+         k_in = initer - rhs;
+            csr_mvp_sym2(&csr,&V[k_in*ldb],w); //Sparse-Matrix Vector Multiplication 
+        /**********************
+         Modified Gram-Schmidt 
+         **********************/
+           for (i = 0;i <initer; i++){
+                  H[i*restart+k_in]= dot_product(&V[i*ldb], w, rows);
+                     //w = w- H[i*restart+k_in]*V[i*ldb];
+                     cblas_daxpy (rows,-H[i*restart+k_in], &V[i*ldb],1, w,1);
+            }
+           H[initer*restart+k_in] = vecnorm(rows,w, w);
+          // V[initer*ldb]= w/H[initer*restart+k_in];
+          cblas_dscal(rows, 1.0/H[initer*restart+k_in],w, 1);
+          cblas_dcopy(rows, w, 1, &V[initer*ldb], 1);
+}
+
+//print_vector("\nw =\n ", w, rows);
 /*
-	for ( j = 0; j <m; j++ ) {
-      		for (i = 0; i < csr.rows; i++ ){
-       		 V[i][j] = 0.0;
-      		}
-    */
+for(j = 0;j <rhs;j++){
+   for(i = 0;i <rows;i++){
+      w[j] = vecnorm(i, &B[j*rows], &B[j*rows]);
+   }  
+}*/
 
-	for ( i = 0; i < m; i++ ) {
-       		for ( j = 0; j < nrhs; j++ ){
-           	E[i][j] = 0.0;
-       		}
-	}
+/*************************************
+Printing Matrix for Debugging
+*************************************/
+//print_vector("\nThe vector w after multiplication is  =\n ", w, rows);
+
+
+printf("\n\nThe Orthogonal basis V is:\n");
+print_matrix(V,m,rows);
+
+
+printf("\n\nThe Hessenberg H is:\n");
+print_matrix(H,m,restart);
+/*
+printf("\n\nThe Identity matrix E is: \n");
+print_matrix(E,m,rhs);
+*/
+printf("\n\n");
 
 /******************************
- * Construction of V space
- * *****************************/
-
-/*LAPACKE routine for QR factors
-LAPACKE_ dgeqrf(m, n, a, lda, tau, work, lwork, info);
- Input Arguments: m = number of rows in matrix A used in the computation, 
-		  n = number of columns in matrix A used in the computation.
-                  a = m by n general matrix A whose QR factorization is to be computed.
-                lda = is the leading dimension of the array specified for a.
-               lwork = 0 for best performance
- /
-lwork =0;
-dgeqrf(csr.rows,nrhs,R0, csr.rows,tau,work, lwork, info);
-
-
-//}  //End of for loop before QR-factors 
-// Printing matrices for Debugging 
-
-printf("\n\n The V space is \n");
-print_matrix(V, csr.rows, m);
-printf("\n\n The Hessenberg matrix is \n");
-print_matrix(H, m, restart);
-printf("\n\n The Matrix E is \n");
-print_matrix(E, m, nrhs);*/
-
-//print_matrix(V, csr.rows, m);
-//Free resources  
+Free Resources
+******************************/
+free(B);
 free(w);
-//free(relres);
-//free(e);
-//free_dmatrix(V,0, csr.rows, 0, m);
-free_dmatrix(H, 0, m, 0, restart);
-free_dmatrix(E, 0, m, 0, nrhs);
-free_dmatrix ( B, 0, csr.rows, 0, nrhs );
-free_dmatrix(T,0,nrhs,0, csr.rows);
-free_dmatrix(scal,0,nrhs,0,nrhs);
 free(V);
-free(B2);
+free(H);
+free(E);
+free(tau);
+free(scal);
 
-exit(EXIT_SUCCESS); //Exit the main function 
-}// End of main function
+exit(EXIT_SUCCESS);
 
+} //End of main program 
+/****************************************
+*Functions 
+***************************************/
 
-/*********************************
- * Functions 
-*********************************/
+void print_matrix(double *arr, int rows, int cols){
+ 
+     for(int i = 0; i <rows; i++){
+         for (int j=0;j<cols; j++){
+ 
+                printf("\t%e\t",arr[i*cols+j]);
 
-void print_vector(char* pre, double *v, unsigned int size){
-       unsigned int i;
-      printf("%s", pre);
-         for(i = 0; i < size; i++){
-         //printf("%.1f ", v[i]);
-         printf("%e \t", v[i]);
-     }
-     printf("\t");
- }
-
-     void parse_args(int argc, char *argv[]){
-     int i;
-     if (argc < 2) {
-         printf("Usage: %s input_matrix [iterations]\n", argv[0]);
-         exit(EXIT_FAILURE);
-     }
-       if(argc >= 3){
-         i = atoi(argv[2]);
-         if (i <= 0){
-             printf("Invalid number of iterations.\n");
-             exit(EXIT_FAILURE);
-         }
-             maxit = i;
-     }
+        }
+       printf("\n");
+     } 
  }
 
 double randf(double low,double high){
- return (rand()/(double)(RAND_MAX))*fabs(low-high)+low;
-}
+return (rand()/(double)(RAND_MAX))*fabs(low-high)+low;
+ }
 
-
-void print_matrix(double **arr, int rows, int cols){
-   
-    for(int i = 0; i <rows; i++){
-        for (int j=0;j<cols; j++){
-              
-               printf("\t%e\t",arr[i][j]);
-       }
-      printf("\n");
-    }
-
-}
-
-
-/*************************************
- *Allocating 2D-Array
-Parameters:
-    Input, int NRL, NRH, the low and high row indices.
-    Input, int NCL, NCH, the low and high column indices.
-    Output, double **DMATRIX, a doubly-dimensioned array with
-    the requested row and column ranges.
- ************************************/
-double **dmatrix ( int nrl, int nrh, int ncl, int nch )
-
-{
-  int i;
-  double **m;
-  int nrow = nrh - nrl + 1;
-  int ncol = nch - ncl + 1;
-/* 
-  Allocate pointers to the rows.
-*/
-  m = ( double ** ) malloc ( (size_t) ( ( nrow + 1 ) * sizeof ( double* ) ) );
-
-  if ( ! m ) 
-  {
-    fprintf ( stderr, "\n" );
-    fprintf ( stderr, "DMATRIX - Fatal error!\n" );
-    fprintf ( stderr, "  Failure allocating pointers to rows.\n");
-    exit ( 1 );
-  }
-  m = m + 1;
-  m = m - nrl;
-/* 
-  Allocate each row and set pointers to them.
-*/
-  m[nrl] = ( double * ) malloc ( (size_t) ( ( nrow * ncol + 1 ) * sizeof ( double ) ) );
-
-  if ( ! m[nrl] ) 
-  {
-    fprintf ( stderr, "\n" );
-    fprintf ( stderr, "DMATRIX - Fatal error!\n" );
-    fprintf ( stderr, "  Failure allocating rows.\n");
-    exit ( 1 );
-  }
-  m[nrl] = m[nrl] + 1;
-  m[nrl] = m[nrl] - ncl;
-
-  for ( i = nrl + 1; i <= nrh; i++ ) 
-  { 
-    m[i] = m[i-1] + ncol;
-  }
-/* 
-  Return the pointer to the array of pointers to the rows;
-*/
-  return m;
-}
-
-/******************************************************************************/
-
-void free_dmatrix ( double **m, int nrl, int nrh, int ncl, int nch )
-
-/******************************************************************************/
-/*
-  Purpose:
-    FREE_DMATRIX frees a double matrix allocated by DMATRIX 
-  Parameters:
-    Input, int NRL, NRH, the low and high row indices.
-    Input, int NCL, NCH, the low and high column indices.
-    Input, double **M, the pointer to the doubly-dimensioned array,
-    previously created by a call to DMATRIX.
-*/
-{
-  free ( ( char * ) ( m[nrl] + ncl - 1 ) );
-  free ( ( char * ) ( m + nrl - 1 ) );
-
-  return;
-}
-
-/******************************************************************************/
-
-double vecnorm( int n, double a1[], double a2[])
-
-/******************************************************************************/
-/*Parameters:
-    Input, int N, the number of entries in the vectors.
-    Input, double A1[N], A2[N], the two vectors to be considered.
-    Output, SQRT of the dot product of the vectors.
-*/
-
-{
-  int i;
-  double value;
-
-  value = 0.0;
-  for ( i = 0; i < n; i++ ){
-    value += a1[i] * a2[i];
-  }
-  return sqrt(value);
-}
-
-void print_1matrix(double *arr, int rows, int cols){
+/******************************************************************************/ 
+ double vecnorm( int n, double a1[], double a2[])
+ /******************************************************************************/
+ /*Parameters:
+     Input, int N, the number of entries in the vectors.
+     Input, double A1[N], A2[N], the two vectors to be considered.
+     Output, SQRT of the dot product of the vectors.
+ */
  
-      for(int i = 0; i <rows; i++){
-          for (int j=0;j<cols; j++){
+ {
+   int i;
+   double value;
  
-                 printf("\t%.2f\t",arr[i*cols+j]);
- 
-         }
-        printf("\n");
+   value = 0.0;
+   for ( i = 0; i < n; i++ ){
+     value += a1[i] * a2[i];
+   }
+   return sqrt(value);
+ }
+
+
+void print_vector(char* pre, double *v, unsigned int size){
+        unsigned int i;
+       printf("%s", pre);
+         for(i = 0; i < size; i++){
+//          printf("%.3f\t ", v[i]);
+          printf("%e \n", v[i]);
+      }
+      printf("\t");
+  }
+
+
+      void parse_args(int argc, char *argv[]){
+      int i;
+      if (argc < 2) {
+          printf("Usage: %s input_matrix [iterations]\n", argv[0]);
+          exit(EXIT_FAILURE);
+      }
+        if(argc >= 3){
+          i = atoi(argv[2]);
+          if (i <= 0){
+              printf("Invalid number of iterations.\n");
+              exit(EXIT_FAILURE);
+          }
+              maxit = i;
       }
   }
+
+
+
+double **dmatrix ( int nrl, int nrh, int ncl, int nch )
+ 
+ {
+   int i;
+   double **m;
+   int nrow = nrh - nrl + 1;
+   int ncol = nch - ncl + 1;
+ /* 
+   Allocate pointers to the rows.
+ */
+   m = ( double ** ) malloc ( (size_t) ( ( nrow + 1 ) * sizeof ( double* ) ) );
+
+   if ( ! m )
+   {
+     fprintf ( stderr, "\n" );
+     fprintf ( stderr, "DMATRIX - Fatal error!\n" );
+     fprintf ( stderr, "  Failure allocating pointers to rows.\n");
+     exit ( 1 );
+   }
+   m = m + 1;
+   m = m - nrl;
+ /* 
+   Allocate each row and set pointers to them.
+ */
+   m[nrl] = ( double * ) malloc ( (size_t) ( ( nrow * ncol + 1 ) * sizeof ( double ) ) );
+ 
+   if ( ! m[nrl] )
+   {
+     fprintf ( stderr, "\n" );
+     fprintf ( stderr, "DMATRIX - Fatal error!\n" );
+     fprintf ( stderr, "  Failure allocating rows.\n");
+     exit ( 1 );
+   }
+   m[nrl] = m[nrl] + 1;
+ /* 
+   Return the pointer to the array of pointers to the rows;
+ */
+   return m;
+ }
+
+
+void matriscopy (double * destmat, double * srcmat, int rowcount, int columncount)
+{
+  int i, j;
+  double (*dst)[columncount];
+  double (*src)[columncount];
+  dst = (double (*)[columncount])destmat;
+  src = (double (*)[columncount])srcmat;
+  for (j=0; j<columncount; j++) /* rad-nr */
+    for (i=0; i<rowcount; i++) /* kolumn-nr */
+      dst[j][i] = src[j][i];
+}
+
+double dot_product(double v[], double u[], int n)
+{
+    double result = 0.0;
+    for (int i = 0; i < n; i++)
+        result += v[i]*u[i];
+    return result;
+}
+
+void subtract(double xx[], double yy[], double result[], int num) {
+    for (int ii = 0; ii < num; ii++) {
+        result[ii] = xx[ii]-yy[ii];
+    }
+}
 

@@ -240,10 +240,11 @@ for (int initer = rhs;initer<m;initer++){
                   H[i*restart+k_in]= dot_product(&V[i*ldb], w, rows);
                      //w = w- H[i*restart+k_in]*V[i*ldb];
                      cblas_daxpy (rows,-H[i*restart+k_in], &V[i*ldb],1, w,1);
-
-                                               
             }
-          //   H[(initer+1)*restart+k_in] = vecnorm(
+           H[initer*restart+k_in] = vecnorm(rows,w, w);
+          // V[initer*ldb]= w/H[initer*restart+k_in];
+          cblas_dscal(rows, 1.0/H[initer*restart+k_in],w, 1);
+          cblas_dcopy(rows, w, 1, &V[initer*ldb], 1);
 }
 
 //print_vector("\nw =\n ", w, rows);
@@ -259,10 +260,10 @@ Printing Matrix for Debugging
 *************************************/
 print_vector("\nThe vector w after multiplication is  =\n ", w, rows);
 
-/*
+
 printf("\n\nThe Orthogonal basis V is:\n");
 print_matrix(V,m,rows);
-*/
+
 
 printf("\n\nThe Hessenberg H is:\n");
 print_matrix(H,m,restart);
@@ -295,7 +296,7 @@ void print_matrix(double *arr, int rows, int cols){
      for(int i = 0; i <rows; i++){
          for (int j=0;j<cols; j++){
  
-                printf("\t%1.2e\t",arr[i*cols+j]);
+                printf("\t%e\t",arr[i*cols+j]);
 
         }
        printf("\n");
@@ -419,6 +420,6 @@ double dot_product(double v[], double u[], int n)
 
 void subtract(double xx[], double yy[], double result[], int num) {
     for (int ii = 0; ii < num; ii++) {
-        result[ii] = xx[ii]+yy[ii];
+        result[ii] = xx[ii]-yy[ii];
     }
 }

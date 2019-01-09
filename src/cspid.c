@@ -231,6 +231,7 @@ for (i =0;i<rows; i++){
 }
 //print_matrix(V, rhs, rows);
 printf("\n\nQR Factorization, extraction of V and R completed successfully\n");
+
 /*****************************
 Block Arnoldi Variant
 ******************************/
@@ -250,25 +251,31 @@ for (int initer = rhs;initer<m;initer++){
           // V[initer*ldb]= w/H[initer*restart+k_in];
           cblas_dscal(rows, 1.0/H[initer*restart+k_in],w, 1);
           cblas_dcopy(rows, w, 1, &V[initer*ldb], 1);
+/**************
+End of Arnoldi
+***************/
+
+       /**************
+        Givens Rotation
+       **************/
             
        //Reading the S matrix from MATLB Source, I need to port this step in C
       // E=[eye(p,p);zeros(k_in,p)]*scal;
       // S = H(1:k_in + p,1:k_in)\E(1:k_in + p,:); 
 
-        fp = fopen("S.txt", "r");
+        fp = fopen("S.txt", "r");//Right Now I am reading S obtained from MATLAB results
         if (fp == NULL)
         exit(0);
 
         while(!feof(fp)){
               for(i=0;i<restart;i++){
-            for(j=0;j<restart;j++){
+                  for(j=0;j<restart;j++){
                 fscanf(fp,"%lf",&S[i*restart+j]);
+         }
         }
-    }
+       } //End of while loop for reading Matrix
 
-} //End of while loop for reading Matrix
-
-
+    /
          
        
 
@@ -314,6 +321,7 @@ free(H);
 free(E);
 free(tau);
 free(scal);
+free(S);
 
 exit(EXIT_SUCCESS);
 

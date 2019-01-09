@@ -26,7 +26,7 @@ int main (int argc, char * argv[])
 {
 
 double *B,*w,*tau, *scal, *V, *H, *E;
-double *relres, *e, *nrm, *y;
+double *relres, *e, *nrm, *y, *S;
 int rows, rhs;
 int M, N, nz, work, lwork;
 int initer, iter, i, j, k;
@@ -35,6 +35,10 @@ int sym;
 int ret_code;
 CSR_Matrix csr;
 int restart, m;
+FILE *fp;
+char * line = NULL;
+size_t len = 0;
+ ssize_t read;
 Clock clock;
 MM_typecode matcode;
 char* filename;
@@ -109,6 +113,7 @@ T = calloc(rhs*rows,sizeof(double));
 V = calloc(m*rows,sizeof(double));
 H = calloc(m*restart, sizeof(double));
 E = calloc(m*rhs,sizeof(double));
+S = calloc(restart*restart, sizeof(double));
 
 /*******************************
 *Generate Random RHS Matrix 
@@ -120,8 +125,8 @@ for(i =0; i<rows;i++){
     }
 }
 
-//printf("\n\nThe randomly generated RHS is\n"); 
-//print_matrix(B,rows,rhs);
+printf("\n\nThe randomly generated RHS is\n"); 
+print_matrix(B,rows,rhs);
 
 /***********************************************************
 *Transpose of B/ Calculation Norm and Relative Residual Norm 
@@ -245,7 +250,31 @@ for (int initer = rhs;initer<m;initer++){
           // V[initer*ldb]= w/H[initer*restart+k_in];
           cblas_dscal(rows, 1.0/H[initer*restart+k_in],w, 1);
           cblas_dcopy(rows, w, 1, &V[initer*ldb], 1);
-}
+            
+       //Reading the S matrix from MATLB Source, I need to port this step in C
+      // E=[eye(p,p);zeros(k_in,p)]*scal;
+      // S = H(1:k_in + p,1:k_in)\E(1:k_in + p,:); 
+
+        fp = fopen("S.txt", "r");
+        if (fp == NULL)
+        exit(0);
+
+        while(!feof(fp)){
+              for(i=0;i<restart;i++){
+            for(j=0;j<restart;j++){
+                fscanf(fp,"%lf",&S[i*restart+j]);
+        }
+    }
+
+} //End of while loop for reading Matrix
+
+
+         
+       
+
+
+
+}//End of initer loop 
 
 //print_vector("\nw =\n ", w, rows);
 /*
@@ -259,6 +288,8 @@ for(j = 0;j <rhs;j++){
 Printing Matrix for Debugging
 *************************************/
 //print_vector("\nThe vector w after multiplication is  =\n ", w, rows);
+printf("\n\nThe Matrix S is:\n");
+print_matrix(S,restart,restart); 
 
 
 printf("\n\nThe Orthogonal basis V is:\n");

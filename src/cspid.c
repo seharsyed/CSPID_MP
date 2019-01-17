@@ -251,9 +251,9 @@ for (int initer = rhs;initer<m;initer++){
           // V[initer*ldb]= w/H[initer*restart+k_in];
           cblas_dscal(rows, 1.0/H[initer*restart+k_in],w, 1);
           cblas_dcopy(rows, w, 1, &V[initer*ldb], 1);
-/**************
-End of Arnoldi
-***************/
+    /**************
+    End of Arnoldi
+    ***************/
 
        /**************
         Givens Rotation
@@ -275,9 +275,20 @@ End of Arnoldi
         }
        } //End of while loop for reading Matrix
 
-    /
-         
-       
+ //Fortran Template
+ 
+
+
+
+
+    /*************************************
+    Solution Matrix update and update of R    
+    *************************************/
+   // X = X0 + V(:,1:k_in)*S;
+   //R = B - A * X;
+
+   
+
 
 
 

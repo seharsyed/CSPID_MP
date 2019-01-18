@@ -25,7 +25,7 @@ void subtract(double xx[], double yy[], double result[], int num);
 int main (int argc, char * argv[])
 {
 
-double *B,*w,*tau, *scal, *V, *H, *E;
+double *B,*w,*tau, *scal, *V, *H, *E, *X;
 double *relres, *e, *nrm, *y, *S;
 int rows, rhs;
 int M, N, nz, work, lwork;
@@ -114,7 +114,7 @@ V = calloc(m*rows,sizeof(double));
 H = calloc(m*restart, sizeof(double));
 E = calloc(m*rhs,sizeof(double));
 S = calloc(restart*restart, sizeof(double));
-
+X = calloc(rows*rhs, sizeof(double));
 /*******************************
 *Generate Random RHS Matrix 
 *******************************/
@@ -263,6 +263,7 @@ for (int initer = rhs;initer<m;initer++){
       // E=[eye(p,p);zeros(k_in,p)]*scal;
       // S = H(1:k_in + p,1:k_in)\E(1:k_in + p,:); 
 
+//Matrix Read      
         fp = fopen("S.txt", "r");//Right Now I am reading S obtained from MATLAB results
         if (fp == NULL)
         exit(0);
@@ -273,20 +274,29 @@ for (int initer = rhs;initer<m;initer++){
                 fscanf(fp,"%lf",&S[i*restart+j]);
          }
         }
-       } //End of while loop for reading Matrix
+       } //End of while loop for reading Matrix */
 
  //Fortran Template
  
+// Rotate 
+/*for (k = 0; k <k_in;k++){
 
-
+    r1 = H[k*restart+k_in];
+    r2 = H[(k+1)*restart+k_in];
+    
+   H[k*restart+k_in] = c[k]*r1-s[k]*r2
+   H[(k+1)
+*/
 
 
     /*************************************
     Solution Matrix update and update of R    
     *************************************/
    // X = X0 + V(:,1:k_in)*S;
-   //R = B - A * X;
+   //R = B - A * X
 
+//cblas_dgemm (CBLAS_LAYOUT, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, m rows of the matrix, n cols of B, k cols of A, alpha, *a, lda,  *b, ldb, beta, *c, ldc);
+  cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, rhs, rhs, 1.0, V, rows, S, rhs, 1.0, X, rhs); 
    
 
 
@@ -316,6 +326,9 @@ print_matrix(V,m,rows);
 
 printf("\n\nThe Hessenberg H is:\n");
 print_matrix(H,m,restart);
+
+printf("\n\nThe updated Solution X is:\n");
+print_matrix(X,rows,rhs);
 /*
 printf("\n\nThe Identity matrix E is: \n");
 print_matrix(E,m,rhs);

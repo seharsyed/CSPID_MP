@@ -34,11 +34,12 @@ CBLAS = -lcblas
 LIBES = -lm
 LAPACK = -llapack
 LAPACKE = -llapacke
+SPBLAS = /home/academic/snaveed/CSPID/spblas_0_8/libsparseblas.a 
 #----------------------------------------------------------------------------
 #Include files (Header files)
 #----------------------------------------------------------------------------
 
-INCLUDES = ../include
+INCLUDES = -I../include
 
 #-----------------------------------------------------------------------------
 # Flags for Compilers
@@ -70,13 +71,13 @@ RM = rm -f
 #-------------------------------------------------------------------------
 
 #LIB = $(LIBES) $(LAPACKE) $(LAPACK) $(BLAS)
-LIB =  $(LIBES) $(LAPACKE) $(CBLAS) $(LAPACK) $(BLAS)
+LIB =  $(LIBES) $(LAPACKE) $(CBLAS) $(SPBLAS) $(LAPACK) $(BLAS)
 COMMON_DEPS = mmio.c 
 
 all: $(TARGET)
 
-cspid: cspid.c $(COMMON_DEPS) $(INCLUDES)
-	$(CC) $(FLAGS) -o cspid cspid.c mmio.c $(LIB)
+cspid: cspid.c $(COMMON_DEPS) 
+	$(CC) $(FLAGS) $(INCLUDES) -o cspid cspid.c mmio.c $(LIB)
 	
 clean:
 	$(RM) $(TARGET)	

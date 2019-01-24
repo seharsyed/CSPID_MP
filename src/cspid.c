@@ -5,13 +5,18 @@
 #include <lapacke.h>
 #include <string.h>
 #include <cblas.h>
+#include <blas_sparse.h>
 
 #include "clock.h"
 #include "coo.h"
 #include "csr.h"
+//#include "csc.h"
+
+//#include "sp_blas.h"
 
 unsigned int maxit = 1000;
 
+void get_trans(double *x, double *y, int rows, int cols);
 void parse_args(int argc, char *argv[]);
 double randf(double low,double high);
 void print_matrix(double *arr, int rows, int cols);
@@ -31,19 +36,29 @@ int rows, rhs;
 int M, N, nz, work, lwork;
 int initer, iter, i, j, k;
 int info,ldb,lda, k_in;
-int sym;
+int sym, sym1;
+blas_sparse_matrix A; //Sparse Blas handle 
 int ret_code;
+COO_Matrix coo;
 CSR_Matrix csr;
+//CSC_Matrix csc;
+
 int restart, m;
 FILE *fp;
 char * line = NULL;
 size_t len = 0;
- ssize_t read;
+ssize_t read;
 Clock clock;
 MM_typecode matcode;
 char* filename;
-double **T1;
+double *temp;
 double *T;
+double *Ax;
+int *Ap, *Ai;
+int istat, stat;
+
+//blas_sparse_matrix A; //Sparse Blas handle 
+
 /* compute sparse matrix matrix multiplication 
 */
 
@@ -54,22 +69,28 @@ filename = argv[1];  //Passing on the file
 /***********************************************************
 * Reading the Matrix from MM. The matrix is in CSR Format*
 ************************************************************/
- /***************************************
-    * If the matrix Instance is COO
-    * ***********************************/
+ /***********************************************************
+    * If the matrix Instance is CSC -- COO to CSC Coversion
+    * *******************************************************/
 
        //Initialize COO Matrix first//
-      // coo_init_matrix(&coo);
+      coo_init_matrix(&coo);
   
         //Load COO Matrix
-       // printf("Loading matrix \"%s\"\n", filename);
+      printf("Loading matrix \"%s\"\n", filename);
  
-      // sym1 = coo_load_matrix(filename, &coo);
+       sym1 = coo_load_matrix(filename, &coo);
   
       // Print Matrix data
-       // printf("COO matrix data:\n");
-       // coo_print_matrix(&coo);
-  
+       printf("COO matrix data:\n");
+        coo_print_matrix(&coo);
+        
+//Ax = coo.val;
+//Ap = coo.col;
+//Ai = coo.row;  
+
+printf("\nValue at 6th position of COO Matrix is %.2e", coo.val[5]);
+
   /********************************************
    * COO to CSR Matrix - Conversion and loading
    * ********************************************/
@@ -89,6 +110,36 @@ filename = argv[1];  //Passing on the file
    //    csr_print_matrix(&csr);
  
         printf("\n\nReading : Successful\n");
+
+
+/******************************************
+Creating Blas Handle for Sparse Matrix
+******************************************/
+
+printf("\nCreating Blas Handle\n");
+A = BLAS_duscr_begin(csr.rows, csr.rows);
+
+//printf("\n\nPointer passed on\n");
+
+//print_vector("coo.val", coo.val[1], coo.nz);
+
+//Inserting entries
+ for (i =0;i<coo.nz;i++){
+ //BLAS_duscr_insert_row (A, i, csr.nz, &csr.val[i], &csr.ptr[i]);
+   stat = BLAS_duscr_insert_entry(A, coo.val[i], coo.row[i], coo.col[i]); 
+}
+printf("%d", stat);
+if(stat!= 0)
+printf("\nError in Creating Handle\n");
+
+//Complete Construction of Sparse Matrix
+BLAS_duscr_end(A);
+
+
+
+
+
+
 
 /********************************
 *Initialization 
@@ -115,6 +166,7 @@ H = calloc(m*restart, sizeof(double));
 E = calloc(m*rhs,sizeof(double));
 S = calloc(restart*restart, sizeof(double));
 X = calloc(rows*rhs, sizeof(double));
+temp = calloc(rows*rhs, sizeof(double));
 /*******************************
 *Generate Random RHS Matrix 
 *******************************/
@@ -235,6 +287,20 @@ printf("\n\nQR Factorization, extraction of V and R completed successfully\n");
 /*****************************
 Block Arnoldi Variant
 ******************************/
+/*Checking matrix vector from Blas and Other Routine*/
+/*for (int initer = rhs;initer<m;initer++){
+      k_in = initer - rhs;
+      csr_mvp_sym2(&csr,&V[k_in*ldb],w);
+}
+
+print_vector("\nThe vector w after multiplication from previous routine is  =\n ", w, rows);
+
+for (int initer = rhs;initer<m;initer++){
+       k_in = initer - rhs;
+       BLAS_dusmv(blas_no_trans, 1.0, A ,&V[k_in*ldb],1, y, 1);
+ }
+
+*/
 
 for (int initer = rhs;initer<m;initer++){
          k_in = initer - rhs;
@@ -242,7 +308,9 @@ for (int initer = rhs;initer<m;initer++){
         /**********************
          Modified Gram-Schmidt 
          **********************/
-           for (i = 0;i <initer; i++){
+
+        
+      for (i = 0;i <initer; i++){
                   H[i*restart+k_in]= dot_product(&V[i*ldb], w, rows);
                      //w = w- H[i*restart+k_in]*V[i*ldb];
                      cblas_daxpy (rows,-H[i*restart+k_in], &V[i*ldb],1, w,1);
@@ -250,7 +318,7 @@ for (int initer = rhs;initer<m;initer++){
            H[initer*restart+k_in] = vecnorm(rows,w, w);
           // V[initer*ldb]= w/H[initer*restart+k_in];
           cblas_dscal(rows, 1.0/H[initer*restart+k_in],w, 1);
-          cblas_dcopy(rows, w, 1, &V[initer*ldb], 1);
+          cblas_dcopy(rows, w, 1, &V[initer*ldb], 1);  
     /**************
     End of Arnoldi
     ***************/
@@ -296,13 +364,27 @@ for (int initer = rhs;initer<m;initer++){
    //R = B - A * X
 
 //cblas_dgemm (CBLAS_LAYOUT, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, m rows of the matrix, n cols of B, k cols of A, alpha, *a, lda,  *b, ldb, beta, *c, ldc);
-  cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, rhs, rhs, 1.0, V, rows, S, rhs, 1.0, X, rhs); 
-   
+
+
+ cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, rhs, rhs, 1.0, V, rows, S, rhs, 1.0, X, rhs); 
+ 
+//stat =  BLAS_usgp(A, blas_valid_handle);
+ //printf("\n\n USGP returns %d\n", stat);
+
+//printf(" rhs is %d\n", rhs);  
+//istat = BLAS_dusmm(blas_rowmajor, blas_no_trans, rhs, 1.0, A, X, rhs, X, rhs);  
+// printf("\n\n %d\n", istat);
+    get_trans(X, T, csr.rows, rhs);
+    csr_mvp_sym2(&csr,&T[k_in*rows],&temp[k_in*rows]);  
+
+//if(istat!=0)
+//  return (istat);
+
+//csr_mvp(&csr, X, temp);
 
 
 
-
-}//End of initer loop 
+    }//End of initer loop 
 
 //print_vector("\nw =\n ", w, rows);
 /*
@@ -316,6 +398,8 @@ for(j = 0;j <rhs;j++){
 Printing Matrix for Debugging
 *************************************/
 //print_vector("\nThe vector w after multiplication is  =\n ", w, rows);
+
+
 printf("\n\nThe Matrix S is:\n");
 print_matrix(S,restart,restart); 
 
@@ -329,24 +413,30 @@ print_matrix(H,m,restart);
 
 printf("\n\nThe updated Solution X is:\n");
 print_matrix(X,rows,rhs);
-/*
-printf("\n\nThe Identity matrix E is: \n");
-print_matrix(E,m,rhs);
-*/
-printf("\n\n");
+
+printf("\n\nThe Residual is:\n");
+print_matrix(temp,rows,rhs);
+
+//printf("\n\nThe Identity matrix E is: \n");
+//print_matrix(E,m,rhs);
+
+
+
+//printf("\n\n");
 
 /******************************
 Free Resources
 ******************************/
 free(B);
 free(w);
+free(y);
 free(V);
 free(H);
 free(E);
 free(tau);
 free(scal);
 free(S);
-
+BLAS_usds(A);
 exit(EXIT_SUCCESS);
 
 } //End of main program 
@@ -487,3 +577,12 @@ void subtract(double xx[], double yy[], double result[], int num) {
     }
 }
 
+void get_trans(double *x, double *y, int rows, int cols){
+
+unsigned int i,j;
+for(i=0; i<rows; ++i){
+         for(j=0; j<cols; ++j){
+              y[j*rows+i] = x[i*cols+j];
+          }
+ } 
+}

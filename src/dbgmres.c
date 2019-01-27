@@ -53,7 +53,7 @@ int ret_code;
 CSR_Matrix csr;
 //CSC_Matrix csc;
 
-int restart, m;
+int restart, m, pd =0;
 FILE *fp;
 char * line = NULL;
 size_t len = 0;
@@ -65,7 +65,6 @@ double *temp;
 double *Ax;
 int *Ap, *Ai;
 int istat, stat; 
-
 #define max(a,b) ((a)<(b)?(b):(a))
 
 /* compute sparse matrix matrix multiplication 
@@ -259,6 +258,13 @@ for (i =0;i<rhs;i++){
   Sigma_title[i] = max(Sigma[i]-eps*tol,0);
 }
 
+for (i = 0; i<rhs;i++){
+  if(Sigma_title[i]>0){
+    pd++;
+}
+}
+
+printf("The length of Singular Value array after Deflation is %d\n", pd);
 
  printf("\nThe Left Singular Values are\n");
  print_matrix(U, rhs, rhs);   

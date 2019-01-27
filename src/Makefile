@@ -76,6 +76,9 @@ COMMON_DEPS = mmio.c
 
 all: $(TARGET)
 
+dbgmres: dbgmres.c $(COMMON_DEPS) 
+	$(CC) $(FLAGS) $(INCLUDES) -o dbgmres dbgmres.c mmio.c $(LIB)
+
 cspid: cspid.c $(COMMON_DEPS) 
 	$(CC) $(FLAGS) $(INCLUDES) -o cspid cspid.c mmio.c $(LIB)
 	

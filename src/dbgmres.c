@@ -40,13 +40,14 @@ void subtract(double xx[], double yy[], double result[], int num);
 int main (int argc, char * argv[])
 {
 
-double *B,*X, *R0, *trp,*tau, *T, *Q, *U, *Sigma, *VT;
+double *B,*X, *R0, *trp,*tau, *T, *Q, *U, *Sigma, *Sigma_title,*VT;
 
 int rows, rhs;
 int M, N, nz, work, lwork;
 int initer, iter, i, j, k;
 int info,ldb,lda, k_in;
 int sym, sym1;
+double eps, tol;
 
 int ret_code;
 CSR_Matrix csr;
@@ -64,6 +65,8 @@ double *temp;
 double *Ax;
 int *Ap, *Ai;
 int istat, stat; 
+
+#define max(a,b) ((a)<(b)?(b):(a))
 
 /* compute sparse matrix matrix multiplication 
 */
@@ -110,6 +113,8 @@ iter = 0;
 rows = csr.rows;
 rhs = 10;
 restart = 10;
+eps = 0.1;
+tol = 1e-6;
 // thatm = restart+pd; //In matlab m = inner+pd
 
 //Initialize and allocate B
@@ -133,7 +138,8 @@ Q = calloc(rows*rhs, sizeof(double)); //Q factor of QR factorization of R0
 
 //Matrices used for Singular Value Decpmosition
 U = calloc(rhs*rhs, sizeof(double)); //Left Singular Values of R0
-Sigma = calloc(rhs*rhs, sizeof(double)); //Diagonal matrix
+Sigma = calloc(rhs, sizeof(double)); //Diagonal matrix
+Sigma_title = calloc(rhs, sizeof(double));
 VT = calloc(rhs*rhs, sizeof(double)); //Right Singular values of R0 
 
 
@@ -191,7 +197,7 @@ for (k=0;k<csr.rows; k++){
 
 
 /********************
-QR FACTORS 
+SVD & QR FACTORS 
 *********************/
 
 
@@ -249,11 +255,18 @@ info = LAPACKE_dgesvd( LAPACK_ROW_MAJOR, 'A', 'A', rhs, rhs, T, rhs,
                 exit( 1 );
 }
 
-  printf("\nThe Left Singular Values are\n");
+for (i =0;i<rhs;i++){
+  Sigma_title[i] = max(Sigma[i]-eps*tol,0);
+}
+
+
+ printf("\nThe Left Singular Values are\n");
  print_matrix(U, rhs, rhs);   
 
 printf("\nThe Sigma Matrix is\n");
-print_matrix(Sigma, rhs, rhs);
+print_vector("Sigma\n", Sigma, rhs);
+
+print_vector("Sigma_title\n", Sigma_title, rhs);
 
 printf("\nThe Right Singular Matrix is\n");
 print_matrix(VT, rhs, rhs);

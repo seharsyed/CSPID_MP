@@ -41,6 +41,7 @@ int main (int argc, char * argv[])
 {
 
 double *B,*X, *R0, *trp,*tau, *T, *Q, *U, *Sigma, *Sigma_title,*VT;
+double *H, *V;
 
 int rows, rhs;
 int M, N, nz, work, lwork;
@@ -50,7 +51,7 @@ int sym, sym1;
 double eps, tol;
 
 int ret_code;
-CSR_Matrix csr;
+CSR_Matrix A;
 //CSC_Matrix csc;
 
 int restart, m, pd =0;
@@ -62,8 +63,6 @@ Clock clock;
 MM_typecode matcode;
 char* filename;
 double *temp;
-double *Ax;
-int *Ap, *Ai;
 int istat, stat; 
 #define max(a,b) ((a)<(b)?(b):(a))
 
@@ -80,7 +79,7 @@ filename = argv[1];  //Passing on the file
 
 /*TODO:Small tasks: File Management
 
-       1 Change the name from csr to A and the corresponding variables
+       1 Change the name from csr to A and the corresponding variables  : DONE
        2 Create an array with vector tolerance
        3 Shift transpose and print functions to utility and make header file 
        4 Create Residual Matrix with residual block*/
@@ -90,11 +89,11 @@ filename = argv[1];  //Passing on the file
    * ********************************************/
        printf("\n\nReading Matrix Market file Data\n");
         // Initialize matrices.
-       csr_init_matrix(&csr);
+       csr_init_matrix(&A);
   
        // Load matrix from file into COO.
         printf("Loading matrix \"%s\"\n", filename);
-       sym = csr_load_matrix(filename, &csr);
+       sym = csr_load_matrix(filename, &A);
   
        if(sym) printf("\n\nMatrix is symmetric\n");
       else    printf("Matrix is general (non-symmetric)\n");
@@ -109,7 +108,7 @@ filename = argv[1];  //Passing on the file
 *Initialization 
 ********************************/
 iter = 0;
-rows = csr.rows;
+rows = A.rows;
 rhs = 10;
 restart = 10;
 eps = 0.1;
@@ -276,6 +275,20 @@ print_vector("Sigma_title\n", Sigma_title, rhs);
 
 printf("\nThe Right Singular Matrix is\n");
 print_matrix(VT, rhs, rhs);
+
+m = restart+pd;
+
+V = (double*)calloc(rows*m, sizeof(double)); //Orthogonal Basis
+H = (double*)calloc(m*pd, sizeof(double)); //Hessenberg Matrix
+
+//Construction of V_1 of the block V
+
+
+cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, rhs, rhs, 1.0, Q, rhs, U, pd, 1.0, V, m);
+
+printf("\nThe basis V is\n");
+print_matrix(V, rows, m);
+
 
 /*****************************
 Block Arnoldi Variant

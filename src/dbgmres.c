@@ -123,7 +123,7 @@ R0 = calloc(rows*rhs, sizeof(double));//Residual Array
 
 //V = (double*)calloc(rows*m, sizeof(double)); //Orthogonal Basis
 //H = (double*)calloc(m*inner, sizeof(double)); //Hessenberg Matrix
-trp = calloc(rhs*rows, sizeof(double)); //Array for taking transpose of B and Residual
+trp = calloc(rhs*rows, sizeof(double)); //Array for keeping transpose of Matrices
 
 
 //nrm = calloc(rhs, sizeof(double)); 
@@ -263,55 +263,34 @@ for (i = 0; i<rhs;i++){
 }
 }
 
-printf("The length of Singular Value array after Deflation is %d\n", pd);
-
- printf("\nThe Left Singular Values are\n");
- print_matrix(U, rhs, rhs);   
-
-printf("\nThe Sigma Matrix is\n");
-print_vector("Sigma\n", Sigma, rhs);
-
-print_vector("Sigma_title\n", Sigma_title, rhs);
-
-printf("\nThe Right Singular Matrix is\n");
-print_matrix(VT, rhs, rhs);
-
 m = restart+pd;
 
 V = (double*)calloc(rows*m, sizeof(double)); //Orthogonal Basis
 H = (double*)calloc(m*pd, sizeof(double)); //Hessenberg Matrix
 
+
 //Construction of V_1 of the block V
 
+//V(:,1:pd) = Q*U(:,1:pd);
+cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, rhs, rhs, 1.0, Q, rhs, U, pd, 1.0, trp, pd);
 
-cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, rhs, rhs, 1.0, Q, rhs, U, pd, 1.0, V, m);
+for (i =0;i<rows; i++){
+    for (j=0;j<pd;j++){
+         V[j*rows+i] = trp[i*pd+j];
+    }
+ }
 
-printf("\nThe basis V is\n");
-print_matrix(V, rows, m);
+
 
 
 /*****************************
 Block Arnoldi Variant
 ******************************/
-/*Checking matrix vector from Blas and Other Routine*/
-/*for (int initer = rhs;initer<m;initer++){
-      k_in = initer - rhs;
-      csr_mvp_sym2(&csr,&V[k_in*ldb],w);
-}
 
-print_vector("\nThe vector w after multiplication from previous routine is  =\n ", w, rows);
 
-for (int initer = rhs;initer<m;initer++){
-       k_in = initer - rhs;
-       BLAS_dusmv(blas_no_trans, 1.0, A ,&V[k_in*ldb],1, y, 1);
- }
-
-*/
-
-/*
-for (int initer = rhs;initer<m;initer++){
-         k_in = initer - rhs;
-            csr_mvp_sym2(&csr,&V[k_in*ldb],w); //Sparse-Matrix Vector Multiplication */ 
+//for (int initer = rhs;initer<m;initer++){
+  //       k_in = initer - rhs;
+    //        csr_mvp_sym2(&csr,&V[k_in*ldb],w); //Sparse-Matrix Vector Multiplication */ 
         /**********************
          Modified Gram-Schmidt 
          **********************/
@@ -352,6 +331,28 @@ for (int initer = rhs;initer<m;initer++){
          }
         }
   */ //    } //End of while loop for reading Matrix 
+
+/************
+Debugging
+*************/
+
+printf("\nThe Left Singular Values are\n");
+ print_matrix(U, rhs, rhs);
+ 
+printf("\nThe Sigma Matrix is\n");
+print_vector("Sigma\n", Sigma, rhs);
+ 
+print_vector("Sigma_title\n", Sigma_title, rhs);
+ 
+printf("\nThe Right Singular Matrix is\n");
+print_matrix(VT, rhs, rhs);
+
+//printf("\n The temporary matrix is\n");
+//print_matrix(trp, rhs, rows);
+
+printf("\nThe Orthogonal basis V is\n");
+print_matrix(V,m, rows);
+
  
 /******************************
 Free Resources

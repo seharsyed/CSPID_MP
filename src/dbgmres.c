@@ -41,7 +41,7 @@ int main (int argc, char * argv[])
 {
 
 double *B,*X, *R0, *trp,*tau, *T, *Q, *U, *Sigma, *Sigma_title,*VT;
-double *H, *V;
+double *H, *V, *w;
 
 int rows, rhs;
 int M, N, nz, work, lwork;
@@ -120,14 +120,11 @@ tol = 1e-6;
 B = calloc(rows*rhs, sizeof(double)); //RHS
 X = calloc(rows*rhs, sizeof(double)); //Solution Array
 R0 = calloc(rows*rhs, sizeof(double));//Residual Array
-
-//V = (double*)calloc(rows*m, sizeof(double)); //Orthogonal Basis
-//H = (double*)calloc(m*inner, sizeof(double)); //Hessenberg Matrix
-trp = calloc(rhs*rows, sizeof(double)); //Array for keeping transpose of Matrices
+trp = calloc(rhs*rows, sizeof(double)); //Temporary Array for keeping transpose of Matrices
 
 
 //nrm = calloc(rhs, sizeof(double)); 
-//w = calloc(rows, sizeof(double));  //Allocation of Vector Norm//
+w = calloc(rows, sizeof(double));  //Allocation of Vector Norm//
 //y = calloc(rows, sizeof(double));  //Allocation of temperoray vector//
 //relres = (double *)malloc(rhs* sizeof(double)); // Allocation of Relative Residual//
 tau = calloc(rhs,sizeof(double));
@@ -140,16 +137,10 @@ Sigma = calloc(rhs, sizeof(double)); //Diagonal matrix
 Sigma_title = calloc(rhs, sizeof(double));
 VT = calloc(rhs*rhs, sizeof(double)); //Right Singular values of R0 
 
-
-//T = calloc(rhs*rows,sizeof(double));
 //V = calloc(rhs*rows, sizeof(double));
 
 //E = calloc(m*rhs,sizeof(double));
 //S = calloc(restart*restart, sizeof(double));
-
-//temp = calloc(rows*rhs, sizeof(double));
-
-//TODO: Initialize matrices for SVD
 
 /*******************************
 *Generate Random RHS Matrix 
@@ -251,75 +242,71 @@ info = LAPACKE_dgesvd( LAPACK_ROW_MAJOR, 'A', 'A', rhs, rhs, T, rhs,
         if( info > 0 ) {
                 printf( "The algorithm computing SVD failed to converge.\n" );
                 exit( 1 );
-}
+         }    
 
-for (i =0;i<rhs;i++){
-  Sigma_title[i] = max(Sigma[i]-eps*tol,0);
-}
+          for (i =0;i<rhs;i++){
+          Sigma_title[i] = max(Sigma[i]-eps*tol,0);
+          }
 
-for (i = 0; i<rhs;i++){
-  if(Sigma_title[i]>0){
-    pd++;
-}
-}
+        for (i = 0; i<rhs;i++){
+           if(Sigma_title[i]>0){
+            pd++;
+            }           
+        }
 
-m = restart+pd;
+   m = restart+pd;
 
-V = (double*)calloc(rows*m, sizeof(double)); //Orthogonal Basis
-H = (double*)calloc(m*pd, sizeof(double)); //Hessenberg Matrix
+   V = (double*)calloc(rows*m, sizeof(double)); //Orthogonal Basis
+   H = (double*)calloc(m*pd, sizeof(double)); //Hessenberg Matrix
 
 
-//Construction of V_1 of the block V
+   //Construction of V_1 of the block V
 
-//V(:,1:pd) = Q*U(:,1:pd);
-cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, rhs, rhs, 1.0, Q, rhs, U, pd, 1.0, trp, pd);
+   //V(:,1:pd) = Q*U(:,1:pd);
+   cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, rhs, rhs, 1.0, Q, rhs, U, pd, 1.0, trp, pd);
 
-for (i =0;i<rows; i++){
-    for (j=0;j<pd;j++){
+ //Allocation of transpose of Q*U to V for column multiplication 
+   for (i =0;i<rows; i++){
+     for (j=0;j<pd;j++){
          V[j*rows+i] = trp[i*pd+j];
-    }
- }
-
-
+      }
+    } 
 
 
 /*****************************
 Block Arnoldi Variant
 ******************************/
 
-
-//for (int initer = rhs;initer<m;initer++){
-  //       k_in = initer - rhs;
-    //        csr_mvp_sym2(&csr,&V[k_in*ldb],w); //Sparse-Matrix Vector Multiplication */ 
+for (int initer = pd;initer<m;initer++){
+         k_in = initer - pd;
+            csr_mvp_sym2(&A,&V[k_in*rows],w); //Sparse-Matrix Vector Multiplication */ 
         /**********************
          Modified Gram-Schmidt 
-         **********************/
-/*
-        
+         **********************/        
       for (i = 0;i <initer; i++){
-                  H[i*restart+k_in]= dot_product(&V[i*ldb], w, rows);
-                     //w = w- H[i*restart+k_in]*V[i*ldb];
-                     cblas_daxpy (rows,-H[i*restart+k_in], &V[i*ldb],1, w,1);
+                  H[i*restart+k_in]= dot_product(&V[i*rows], w, rows);
+                     cblas_daxpy (rows,-H[i*restart+k_in], &V[i*rows],1, w,1);
             }
-           H[initer*restart+k_in] = vecnorm(rows,w, w);
-          // V[initer*ldb]= w/H[initer*restart+k_in];
-          cblas_dscal(rows, 1.0/H[initer*restart+k_in],w, 1);
-          cblas_dcopy(rows, w, 1, &V[initer*ldb], 1);  */
+       /*************************/
+
+         //  H[initer*restart+k_in] = vecnorm(rows,w, w);
+         // cblas_dscal(rows, 1.0/H[initer*restart+k_in],w, 1);
+         // cblas_dcopy(rows, w, 1, &V[initer*rows], 1); 
   
-  /**************
-    End of Arnoldi
-    ***************/
+       /**************
+       End of Arnoldi
+       ***************/
 
        /**************
         Givens Rotation
        **************/
             
        //Reading the S matrix from MATLB Source, I need to port this step in C
-      // E=[eye(p,p);zeros(k_in,p)]*scal;
-      // S = H(1:k_in + p,1:k_in)\E(1:k_in + p,:); 
+       // E=[eye(p,p);zeros(k_in,p)]*scal;
+       // S = H(1:k_in + p,1:k_in)\E(1:k_in + p,:); 
 
-//Matrix Read      
-/*
+     //Matrix Read      
+   /*
         fp = fopen("S.txt", "r");//Right Now I am reading S obtained from MATLAB results
         if (fp == NULL)
         exit(0);
@@ -329,8 +316,9 @@ Block Arnoldi Variant
                   for(j=0;j<restart;j++){
                 fscanf(fp,"%lf",&S[i*restart+j]);
          }
-        }
-  */ //    } //End of while loop for reading Matrix 
+        }*/
+
+   } //End of for loop
 
 /************
 Debugging
@@ -343,6 +331,7 @@ printf("\nThe Sigma Matrix is\n");
 print_vector("Sigma\n", Sigma, rhs);
  
 print_vector("Sigma_title\n", Sigma_title, rhs);
+
  
 printf("\nThe Right Singular Matrix is\n");
 print_matrix(VT, rhs, rhs);
@@ -353,15 +342,16 @@ print_matrix(VT, rhs, rhs);
 printf("\nThe Orthogonal basis V is\n");
 print_matrix(V,m, rows);
 
+print_vector("w is\n",w,rows);
  
+printf("\n\nThe Hessenberg Matrix is\n\n");
+print_matrix(H,m, restart);
 /******************************
 Free Resources
 ******************************/
 free(B);free(T);free(Q);
 free(U); free(Sigma); free(VT);
-
-//free(V);
-//free(H);
+free(V); free(H);free(w);
 //free(E);
 free(tau);
 //free(scal);
@@ -416,7 +406,7 @@ void print_vector(char* pre, double *v, unsigned int size){
        printf("%s", pre);
          for(i = 0; i < size; i++){
 //          printf("%.3f\t ", v[i]);
-          printf("%e \n", v[i]);
+          printf("%e \t", v[i]);
       }
       printf("\t");
   }

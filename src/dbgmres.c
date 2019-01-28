@@ -289,9 +289,9 @@ for (int initer = pd;initer<m;initer++){
             }
        /*************************/
 
-         //  H[initer*restart+k_in] = vecnorm(rows,w, w);
-         // cblas_dscal(rows, 1.0/H[initer*restart+k_in],w, 1);
-         // cblas_dcopy(rows, w, 1, &V[initer*rows], 1); 
+           H[initer*restart+k_in] = vecnorm(rows,w, w);
+           cblas_dscal(rows, 1.0/H[initer*restart+k_in],w, 1);
+           cblas_dcopy(rows, w, 1, &V[initer*rows], 1); 
   
        /**************
        End of Arnoldi

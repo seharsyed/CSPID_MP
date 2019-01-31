@@ -36,12 +36,13 @@ double **dmatrix ( int nrl, int nrh, int ncl, int nch );
 void matriscopy (double * destmat, double * srcmat, int rowcount, int columncount);
 double dot_product(double v[], double u[],  int n);
 void subtract(double xx[], double yy[], double result[], int num);
+void scalvec(int n, double sa, double *sx, double *sy, int incx);
 
 int main (int argc, char * argv[])
 {
 
 double *B,*X, *R0, *trp,*tau, *T, *Q, *U, *Sigma, *Sigma_title,*VT;
-double *H, *V, *w;
+double *H, *V, *w, *S, *VT1;
 
 int rows, rhs;
 int M, N, nz, work, lwork;
@@ -133,7 +134,7 @@ Q = calloc(rows*rhs, sizeof(double)); //Q factor of QR factorization of R0
 
 //Matrices used for Singular Value Decpmosition
 U = calloc(rhs*rhs, sizeof(double)); //Left Singular Values of R0
-Sigma = calloc(rhs, sizeof(double)); //Diagonal matrix
+Sigma = calloc(rhs*rhs, sizeof(double)); //Diagonal matrix
 Sigma_title = calloc(rhs, sizeof(double));
 VT = calloc(rhs*rhs, sizeof(double)); //Right Singular values of R0 
 
@@ -254,12 +255,23 @@ info = LAPACKE_dgesvd( LAPACK_ROW_MAJOR, 'A', 'A', rhs, rhs, T, rhs,
             }           
         }
 
+   for (i = 0;i<pd;i++){
+     for (j= 0; j<pd; j++){
+          if (i==j)
+            Sigma[i*pd+j] = Sigma_title[i];
+         else 
+           Sigma[i*pd+j] = 0.0;
+        }
+    }    
+
+  printf("\n\nSVD Successful\n");
+
    m = restart+pd;
 
    V = (double*)calloc(rows*m, sizeof(double)); //Orthogonal Basis
    H = (double*)calloc(m*pd, sizeof(double)); //Hessenberg Matrix
-
-
+   S = (double*)calloc(restart*pd, sizeof(double)); 
+   VT1 =(double*)calloc(rhs*pd, sizeof(double)); //Matrix for saving Sigma*VT
    //Construction of V_1 of the block V
 
    //V(:,1:pd) = Q*U(:,1:pd);
@@ -306,46 +318,58 @@ for (int initer = pd;initer<m;initer++){
        // S = H(1:k_in + p,1:k_in)\E(1:k_in + p,:); 
 
      //Matrix Read      
-   /*
-        fp = fopen("S.txt", "r");//Right Now I am reading S obtained from MATLAB results
+   
+        fp = fopen("S1.txt", "r");//Right Now I am reading S obtained from MATLAB results
         if (fp == NULL)
         exit(0);
 
         while(!feof(fp)){
               for(i=0;i<restart;i++){
-                  for(j=0;j<restart;j++){
+                  for(j=0;j<pd;j++){
                 fscanf(fp,"%lf",&S[i*restart+j]);
          }
-        }*/
+        }
+     }  //End of while loop for reading matrix
 
-   } //End of for loop
+  //Sigma*VT 
+  
+for (i =0; i<pd;i++){
+//printf("\n\nSigma_title %d entry is %.2e\n",i, Sigma_title[i]);  
+//print_vector("\nMultiplying with Right Singular Row", &VT[i*pd], pd);   
+ scalvec(pd, Sigma_title[i], &VT[i*pd], &VT1[i*pd], 1);
+   }
+} //End of for loop
+
 
 /************
 Debugging
 *************/
 
-printf("\nThe Left Singular Values are\n");
+printf("\n\nThe Left Singular Values are\n");
  print_matrix(U, rhs, rhs);
  
-printf("\nThe Sigma Matrix is\n");
-print_vector("Sigma\n", Sigma, rhs);
+printf("\n\nThe Sigma Matrix is\n");
+print_matrix(Sigma, rhs, rhs);
  
-print_vector("Sigma_title\n", Sigma_title, rhs);
+print_vector("\n\nSigma_title\n", Sigma_title, rhs);
 
  
-printf("\nThe Right Singular Matrix is\n");
+printf("\n\n\nThe Right Singular Matrix is\n");
 print_matrix(VT, rhs, rhs);
 
-//printf("\n The temporary matrix is\n");
-//print_matrix(trp, rhs, rows);
+printf("\n The Right Singular Matrix after Multiplication is\n");
+print_matrix(VT1, rhs, rhs);
 
-printf("\nThe Orthogonal basis V is\n");
+printf("\n\nThe Orthogonal basis V is\n");
 print_matrix(V,m, rows);
 
 print_vector("w is\n",w,rows);
  
 printf("\n\nThe Hessenberg Matrix is\n\n");
 print_matrix(H,m, restart);
+
+printf("\n\nThe matrix S is\n");
+print_matrix(S, pd, pd);
 /******************************
 Free Resources
 ******************************/
@@ -506,3 +530,47 @@ void get_trans(double *x, double *y, int rows, int cols)
           }
  } 
 }
+
+
+void scalvec(int n, double sa, double *sx, double *sy, int incx)
+{
+  long int i, m, nincx, nn, iincx;
+  double ssa;
+
+    // scales a vector by a constant.   
+    // uses unrolled loops for increment equal to 1.   
+    // jack dongarra, linpack, 3/11/78.   
+    // modified 3/93 to return if incx .le. 0.   
+    // modified 12/3/93, array(1) declarations changed to array(*) 
+
+  // Dereference inputs 
+  nn = n;
+  iincx = incx;
+  ssa = sa;
+
+  if (nn > 0 && iincx > 0)
+  {
+    if (iincx == 1) // code for increment equal to 1 
+    {
+      m = nn-4;
+      for (i = 0; i < m; i += 5)
+      {
+        sy[i] = ssa * sx[i];
+        sy[i+1] = ssa * sx[i+1];
+        sy[i+2] = ssa * sx[i+2];
+        sy[i+3] = ssa * sx[i+3];
+        sy[i+4] = ssa * sx[i+4];
+      }
+      for ( ; i < nn; ++i) // clean-up loop 
+        sy[i] = ssa * sx[i];
+    }
+    else // code for increment not equal to 1 
+    {
+      nincx = nn * iincx;
+      for (i = 0; i < nincx; i += iincx)
+        sy[i] = ssa * sx[i];
+    }
+  }
+
+} 
+

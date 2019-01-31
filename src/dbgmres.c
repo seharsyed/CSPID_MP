@@ -42,7 +42,7 @@ int main (int argc, char * argv[])
 {
 
 double *B,*X, *R0, *trp,*tau, *T, *Q, *U, *Sigma, *Sigma_title,*VT;
-double *H, *V, *w, *S, *VT1;
+double *H, *V, *w, *S1, *C, *VT1;
 
 int rows, rhs;
 int M, N, nz, work, lwork;
@@ -270,9 +270,13 @@ info = LAPACKE_dgesvd( LAPACK_ROW_MAJOR, 'A', 'A', rhs, rhs, T, rhs,
 
    V = (double*)calloc(rows*m, sizeof(double)); //Orthogonal Basis
    H = (double*)calloc(m*pd, sizeof(double)); //Hessenberg Matrix
-   S = (double*)calloc(restart*pd, sizeof(double)); 
+   S1 = (double*)calloc(restart*pd, sizeof(double)); 
    VT1 =(double*)calloc(rhs*pd, sizeof(double)); //Matrix for saving Sigma*VT
-   //Construction of V_1 of the block V
+   
+   //Resultant Matrix after Multiplication V and S
+   C = (double*)calloc(rows*pd, sizeof(double));
+
+  //Construction of V_1 of the block V
 
    //V(:,1:pd) = Q*U(:,1:pd);
    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, rhs, rhs, 1.0, Q, rhs, U, pd, 1.0, trp, pd);
@@ -326,19 +330,23 @@ for (int initer = pd;initer<m;initer++){
         while(!feof(fp)){
               for(i=0;i<restart;i++){
                   for(j=0;j<pd;j++){
-                fscanf(fp,"%lf",&S[i*restart+j]);
+                fscanf(fp,"%lf",&S1[i*restart+j]);
          }
         }
      }  //End of while loop for reading matrix
 
   //Sigma*VT 
   
-for (i =0; i<pd;i++){
-//printf("\n\nSigma_title %d entry is %.2e\n",i, Sigma_title[i]);  
-//print_vector("\nMultiplying with Right Singular Row", &VT[i*pd], pd);   
- scalvec(pd, Sigma_title[i], &VT[i*pd], &VT1[i*pd], 1);
-   }
-} //End of for loop
+     for (i =0; i<pd;i++){   
+      scalvec(pd, Sigma_title[i], &VT[i*pd], &VT1[i*pd], 1);
+      }
+
+    cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, pd, pd, 1.0, V, rows, S1, pd, 1.0, C, pd);
+
+
+
+
+} //End of outer for loop
 
 
 /************
@@ -369,7 +377,10 @@ printf("\n\nThe Hessenberg Matrix is\n\n");
 print_matrix(H,m, restart);
 
 printf("\n\nThe matrix S is\n");
-print_matrix(S, pd, pd);
+print_matrix(S1, pd, pd);
+
+printf("\n\nV and S gives\n");
+print_matrix(C, rows, pd);
 /******************************
 Free Resources
 ******************************/

@@ -11,6 +11,9 @@ The main folder is divided into these parts:
 
 4. src: all the source files 
 
+Dependencies: ARPACK -- apt-get install libsuitesparse-dev libarpack2-dev 
+             #WIll add dependencies for lapacke and cblas
+
 The code is compiled by accessing the src folder. 
 once inside the src folder 
    

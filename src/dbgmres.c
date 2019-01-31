@@ -341,8 +341,8 @@ for (int initer = pd;initer<m;initer++){
       scalvec(pd, Sigma_title[i], &VT[i*pd], &VT1[i*pd], 1);
       }
 
-    cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, pd, pd, 1.0, V, rows, S1, pd, 1.0, C, pd);
-
+    cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, pd, pd, 1.0, V, rows, S1, pd, 0.0, C, pd);
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, pd, pd, 1.0, C, pd, VT1, pd, 1.0, X, pd);
 
 
 
@@ -381,6 +381,9 @@ print_matrix(S1, pd, pd);
 
 printf("\n\nV and S gives\n");
 print_matrix(C, rows, pd);
+
+printf("\n\n The final solution is\n");
+print_matrix(X, rows, pd);
 /******************************
 Free Resources
 ******************************/

@@ -21,10 +21,21 @@ once inside the src folder
   
   1) make clean (It removes all the previous object files)  
   
-  2) make all  (compiles the C implemenation) 
-  
-  3) ./cspid matrixA.mtx
-          (Here the matrix instance is matrixA.mtx)
-          
-  4) Enter the no of RHS for B 
-          type any no 
+  2)  a) For Block Gmres without deflation type 
+        make bgmres
+      b) For Block GMRES with deflation
+        make dgmres
+      c) For Block GMRES with Spectral Preconditioning and Initial Deflation
+         make spid
+ 
+  Output: 
+     
+
+ 1) For BGMRES output type 
+    ./bgmres filename.mtx 
+ 2) For DBGMRES output
+    ./dbgmres filename.mtx
+ 3) For Spectral Preconditioning and Initial Deflation type 
+    ./spid filename.mtx
+ 
+          (Here the matrix instance used for examples is matrixA.mtx)

@@ -62,7 +62,7 @@ dlvl = ./.
 #Object Files
 #--------------------------------------------------------------------------
 
-TARGET = cspid   #Name of the files that should provide the output
+TARGET = spid   #Name of the files that should provide the output
 RM = rm -f
 
 
@@ -79,8 +79,11 @@ all: $(TARGET)
 dbgmres: dbgmres.c $(COMMON_DEPS) 
 	$(CC) $(FLAGS) $(INCLUDES) -o dbgmres dbgmres.c mmio.c $(LIB)
 
-cspid: cspid.c $(COMMON_DEPS) 
-	$(CC) $(FLAGS) $(INCLUDES) -o cspid cspid.c mmio.c $(LIB)
+bgmres: bgmres.c $(COMMON_DEPS) 
+	$(CC) $(FLAGS) $(INCLUDES) -o bgmres bgmres.c mmio.c $(LIB)
+
+spid: spid.c $(COMMON_DEPS)
+	 $(CC) $(FLAGS) $(INCLUDES) -o spid spid.c mmio.c $(LIB)
 	
 clean:
 	$(RM) $(TARGET)	

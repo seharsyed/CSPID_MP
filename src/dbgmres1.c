@@ -37,15 +37,13 @@ void matriscopy (double * destmat, double * srcmat, int rowcount, int columncoun
 double dot_product(double v[], double u[],  int n);
 void subtract(double xx[], double yy[], double result[], int num);
 void scalvec(int n, double sa, double *sx, double *sy, int incx);
-void GRot(double dx, double dy, double cs, double sn);
-void APRot(double dx, double dy, double cs, double sn);
+void GRot(double *dx, double *dy, double* cs, double*sn);
 
 int main (int argc, char * argv[])
 {
 
 double *B,*X, *R0, *trp,*tau, *T, *Q, *U, *Sigma, *Sigma_title,*VT;
-double *H, *V, *w, *S1, *C, *VT1, *cs, *sn;
-double r1, r2, rr,hh, hv;
+double *H, *V, *w, *S1, *C, *VT1;
 
 int rows, rhs;
 int M, N, nz, work, lwork;
@@ -273,8 +271,6 @@ info = LAPACKE_dgesvd( LAPACK_ROW_MAJOR, 'A', 'A', rhs, rhs, T, rhs,
 
    V = (double*)calloc(rows*m, sizeof(double)); //Orthogonal Basis
    H = (double*)calloc(m*pd, sizeof(double)); //Hessenberg Matrix
-   cs = (double*)calloc(m, sizeof(double));
-   sn = (double*)calloc(m, sizeof(double));
    S1 = (double*)calloc(restart*pd, sizeof(double)); 
    VT1 =(double*)calloc(rhs*pd, sizeof(double)); //Matrix for saving Sigma*VT
    
@@ -313,40 +309,19 @@ for (int initer = pd;initer<m;initer++){
            H[initer*restart+k_in] = vecnorm(rows,w, w);
            cblas_dscal(rows, 1.0/H[initer*restart+k_in],w, 1);
            cblas_dcopy(rows, w, 1, &V[initer*rows], 1); 
-        
-          hh =  H[initer*restart+k_in];
+  
        /**************
        End of Arnoldi
        ***************/
 
        /**************
-        Rotate
+        Givens Rotation
        **************/
+            
+    
 
-    for (k =0;k<k_in;k++){
-        /* APRot(H[k*restart+k_in], H[(k+1)*restart+k_in],cs[k], sn[k]);   
-         GRot(H[initer*restart+k_in], H[(initer+1)*restart+k_in],cs[initer], sn[initer]);
-         APRot(H[initer*restart+k_in], H[(initer+1)*restart+k_in],cs[initer], sn[initer]);
-         APRot(S1[initer*restart+k_in], S1[(initer+1)*restart+k_in],cs[initer], sn[initer]);
-        */
 
-        r1 = H[ k*restart+k_in];
-        r2 = H[(k+1)*restart +k_in];
-        H[k*restart +k_in] = cs[k] * r1 - sn[k] * r2;
-        H[(k + 1)*restart +k_in] = sn[k] * r1 + cs[k] * r2;
 
-             }
-
-          rr = H[k_in*restart +k_in];
-	 printf("\n\nThe vale of rr is %.2e\n",rr); 
-         printf("\n\n The value of hh is %.2e\n",hh);
-
-           hv = sqrt(rr * rr + hh * hh); /* temporary variable */
-	  cs[k_in] =  rr / hv;
-	  sn[k_in] = -hh / hv;
-	  H[k_in*restart+k_in] = hv; 
-
-         
 
        //Reading the S matrix from MATLB Source, I need to port this step in C
        // E=[eye(p,p);zeros(k_in,p)]*scal;
@@ -354,7 +329,7 @@ for (int initer = pd;initer<m;initer++){
 
      //Matrix Read      
    
-/*        fp = fopen("S1.txt", "r");//Right Now I am reading S obtained from MATLAB results
+        fp = fopen("S1.txt", "r");//Right Now I am reading S obtained from MATLAB results
         if (fp == NULL)
         exit(0);
 
@@ -365,17 +340,16 @@ for (int initer = pd;initer<m;initer++){
          }
         }
      }  //End of while loop for reading matrix
-*/
+
   //Sigma*VT 
   
-/*
      for (i =0; i<pd;i++){   
       scalvec(pd, Sigma_title[i], &VT[i*pd], &VT1[i*pd], 1);
       }
 
     cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, pd, pd, 1.0, V, rows, S1, pd, 0.0, C, pd);
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, pd, pd, 1.0, C, pd, VT1, pd, 1.0, X, pd);
-*/
+
 
 
 } //End of outer for loop
@@ -384,7 +358,7 @@ for (int initer = pd;initer<m;initer++){
 /************
 Debugging
 *************/
-/*
+
 printf("\n\nThe Left Singular Values are\n");
  print_matrix(U, rhs, rhs);
  
@@ -404,26 +378,18 @@ printf("\n\nThe Orthogonal basis V is\n");
 print_matrix(V,m, rows);
 
 print_vector("w is\n",w,rows);
-*/ 
+ 
 printf("\n\nThe Hessenberg Matrix is\n\n");
 print_matrix(H,m, restart);
 
-
 printf("\n\nThe matrix S is\n");
 print_matrix(S1, pd, pd);
-/*
+
 printf("\n\nV and S gives\n");
 print_matrix(C, rows, pd);
 
 printf("\n\n The final solution is\n");
 print_matrix(X, rows, pd);
-*/
-
-print_vector("\n\n CS\n", cs, restart);
-
-print_vector("\n\n SN\n", sn, restart);
-
-
 /******************************
 Free Resources
 ******************************/
@@ -628,7 +594,7 @@ void scalvec(int n, double sa, double *sx, double *sy, int incx)
 
 } 
 
-void GRot(double dx, double dy, double cs, double sn)
+void GRot(double *dx, double *dy, double* cs, double*sn)
 {
   double temp;
 
@@ -636,7 +602,7 @@ void GRot(double dx, double dy, double cs, double sn)
     cs = 1.0;
     sn = 0.0;
   } 
-    else if (abs(dy) > abs(dx)) {
+   else if (abs(dy) > abs(dx)) {
     temp = dx / dy;
     sn = 1.0 / sqrt( 1.0 + temp*temp );
     cs = temp * sn;
@@ -646,13 +612,4 @@ void GRot(double dx, double dy, double cs, double sn)
     cs = 1.0 / sqrt( 1.0 + temp*temp );
     sn = temp * cs;
   }
-}
-
-void APRot(double dx, double dy, double cs, double sn)
-{
-  double temp;
-
-  temp  =  cs * dx + sn * dy;
-  dy = -sn * dx + cs * dy;
-  dx = temp;
 }

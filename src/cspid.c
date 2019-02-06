@@ -5,7 +5,7 @@
 #include <lapacke.h>
 #include <string.h>
 #include <cblas.h>
-#include <blas_sparse.h>
+//#include <blas_sparse.h>
 
 #include "clock.h"
 #include "coo.h"
@@ -32,6 +32,8 @@ int main (int argc, char * argv[])
 
 double *B,*w,*tau, *scal, *V, *H, *E, *X;
 double *relres, *e, *nrm, *y, *S;
+double *Hritz1; //CSPID 
+
 int rows, rhs;
 int M, N, nz, work, lwork;
 int initer, iter, i, j, k;
@@ -238,10 +240,12 @@ for (k=0;k<csr.rows; k++){
 
 /********************
 QR FACTORS 
-*********************/
-
+*********************/ 
 
 printf("\nQR factorization started\n");
+
+iter = 0;
+while (iter <=maxit) { //Start of outer iteration 
 
 lda = rhs;
 info = LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, rows, rhs, B, lda, tau );
@@ -281,8 +285,7 @@ for (i =0;i<rows; i++){
         V[j*rows+i] = B[i*rhs+j];
 }
 }
-//print_matrix(V, rhs, rows);
-printf("\n\nQR Factorization, extraction of V and R completed successfully\n");
+//printf("\n\nQR Factorization, extraction of V and R completed successfully\n");
 
 /*****************************
 Block Arnoldi Variant
@@ -303,8 +306,9 @@ for (int initer = rhs;initer<m;initer++){
 */
 
 for (int initer = rhs;initer<m;initer++){
-         k_in = initer - rhs;
-            csr_mvp_sym2(&csr,&V[k_in*ldb],w); //Sparse-Matrix Vector Multiplication 
+           iter = iter+1;
+           k_in = initer - rhs;
+           csr_mvp_sym2(&csr,&V[k_in*ldb],w); //Sparse-Matrix Vector Multiplication 
         /**********************
          Modified Gram-Schmidt 
          **********************/
@@ -393,6 +397,17 @@ for(j = 0;j <rhs;j++){
       w[j] = vecnorm(i, &B[j*rows], &B[j*rows]);
    }  
 }*/
+
+
+/*************
+H-Ritz
+************/
+
+
+
+
+
+}//End of while loop
 
 /*************************************
 Printing Matrix for Debugging

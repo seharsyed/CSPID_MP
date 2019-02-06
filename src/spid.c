@@ -37,13 +37,16 @@ void matriscopy (double * destmat, double * srcmat, int rowcount, int columncoun
 double dot_product(double v[], double u[],  int n);
 void subtract(double xx[], double yy[], double result[], int num);
 void scalvec(int n, double sa, double *sx, double *sy, int incx);
-void GRot(double *dx, double *dy, double* cs, double*sn);
+void GRot(double dx, double dy, double cs, double sn);
 
 int main (int argc, char * argv[])
 {
 
 double *B,*X, *R0, *trp,*tau, *T, *Q, *U, *Sigma, *Sigma_title,*VT;
 double *H, *V, *w, *S1, *C, *VT1;
+
+//Pointers for Preconditioning
+double *HRitz1, *HRitz2;
 
 int rows, rhs;
 int M, N, nz, work, lwork;
@@ -194,13 +197,15 @@ SVD & QR FACTORS
 
 printf("\nQR factorization started\n");
 
+//while (iter<=maxit){
+
 //lda = rhs;
 info = LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, rows, rhs, B, rhs, tau ); //QR Factors 
 
 //print_matrix(B,rows, rhs);
 
 
-printf("The R factor from QR factorization is\n\n");
+//printf("The R factor from QR factorization is\n\n");
 for (i=0;i<rhs;i++){
   for(j=0;j<rhs;j++){
              if(i<=j){
@@ -209,12 +214,12 @@ for (i=0;i<rhs;i++){
   }
 }
 
-printf("\nThe R factor is\n");
-print_matrix(T,rhs,rhs);
+//printf("\nThe R factor is\n");
+//print_matrix(T,rhs,rhs);
 
 /* Extracting V as Q factor of B */
 
-printf("\n\nThe Q factor is\n");
+//printf("\n\nThe Q factor is\n");
 info = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, rows, rhs, rhs, B, rhs, tau);
 
     /*
@@ -233,8 +238,8 @@ info = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, rows, rhs, rhs, B, rhs, tau);
              Q[i*rhs+j] = B[i*rhs+j];
           }  
       }
-     print_matrix(Q, rows, rhs);
-     printf("\n\nQR Factorization, extraction of V and R completed successfully\n");
+  //   print_matrix(Q, rows, rhs);
+   //  printf("\n\nQR Factorization, extraction of V and R completed successfully\n");
 
 //SVD routines
 //dgesvd (jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
@@ -265,7 +270,7 @@ info = LAPACKE_dgesvd( LAPACK_ROW_MAJOR, 'A', 'A', rhs, rhs, T, rhs,
         }
     }    
 
-  printf("\n\nSVD Successful\n");
+  //printf("\n\nSVD Successful\n");
 
    m = restart+pd;
 
@@ -295,7 +300,8 @@ Block Arnoldi Variant
 ******************************/
 
 for (int initer = pd;initer<m;initer++){
-         k_in = initer - pd;
+            iter = iter+1;
+            k_in = initer - pd;
             csr_mvp_sym2(&A,&V[k_in*rows],w); //Sparse-Matrix Vector Multiplication */ 
         /**********************
          Modified Gram-Schmidt 
@@ -352,13 +358,23 @@ for (int initer = pd;initer<m;initer++){
 
 
 
-} //End of outer for loop
+ } //End of inner k_in loop
 
 
+
+HRitz1= (double*)calloc((k_in+1)*(k_in+1), sizeof(double));
+HRitz2 = (double*)calloc(k_in*k_in, sizeof(double));
+
+cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, k_in+1, k_in+1, k_in+1, 1.0, H, k_in+1, H, k_in+1, 0.0, HRitz1, k_in+1);
+printf("\n\nHarmonic Ritz 1st block matrix is\n\n");
+print_matrix(HRitz1, k_in+1, k_in+1);
+
+
+//}// End of while loop 
 /************
 Debugging
 *************/
-
+/*
 printf("\n\nThe Left Singular Values are\n");
  print_matrix(U, rhs, rhs);
  
@@ -390,6 +406,8 @@ print_matrix(C, rows, pd);
 
 printf("\n\n The final solution is\n");
 print_matrix(X, rows, pd);
+
+*/
 /******************************
 Free Resources
 ******************************/
@@ -594,7 +612,7 @@ void scalvec(int n, double sa, double *sx, double *sy, int incx)
 
 } 
 
-void GRot(double *dx, double *dy, double* cs, double*sn)
+void GRot(double dx, double dy, double cs, double sn)
 {
   double temp;
 

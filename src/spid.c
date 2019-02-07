@@ -38,15 +38,16 @@ double dot_product(double v[], double u[],  int n);
 void subtract(double xx[], double yy[], double result[], int num);
 void scalvec(int n, double sa, double *sx, double *sy, int incx);
 void GRot(double dx, double dy, double cs, double sn);
+void identity(double *ee, int size);
 
 int main (int argc, char * argv[])
 {
 
 double *B,*X, *R0, *trp,*tau, *T, *Q, *U, *Sigma, *Sigma_title,*VT;
 double *H, *V, *w, *S1, *C, *VT1;
-
+double *E, *ERitz;
 //Pointers for Preconditioning
-double *HRitz1, *HRitz2;
+double *HRitz1, *HRitz2, *H2, *H1;
 
 int rows, rhs;
 int M, N, nz, work, lwork;
@@ -357,18 +358,38 @@ for (int initer = pd;initer<m;initer++){
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, pd, pd, 1.0, C, pd, VT1, pd, 1.0, X, pd);
 
 
-
- } //End of inner k_in loop
-
+} //End of inner k_in loop
+E = (double*)calloc((k_in+1)*(k_in+1), sizeof(double));
+identity(E, k_in+1);
+print_matrix(E,k_in+1,k_in+1);
 
 
 HRitz1= (double*)calloc((k_in+1)*(k_in+1), sizeof(double));
 HRitz2 = (double*)calloc(k_in*k_in, sizeof(double));
+ERitz = (double*)calloc(k_in*pd,sizeof(double));
+
+H1= (double*)calloc(pd*pd, sizeof(double));
+H2 = (double*)calloc(k_in*pd, sizeof(double));
+
+   for(i =0;i<k_in;i++){
+     for(j =k_in-pd, k =0; j<k_in && k<pd; j++, k++){
+                ERitz[i*pd+k]=E[i*k_in+j];
+          }
+    } 
+      
+
+
+
+// cblas_dgemm (CBLAS_LAYOUT,transa,transb, m (rows of A), n(cols of B), k(cols of A), alpha, *a, lda,*b, ldb, beta, double *c, ldc)
 
 cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, k_in+1, k_in+1, k_in+1, 1.0, H, k_in+1, H, k_in+1, 0.0, HRitz1, k_in+1);
-printf("\n\nHarmonic Ritz 1st block matrix is\n\n");
-print_matrix(HRitz1, k_in+1, k_in+1);
+   // cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, k_in+2, , k_in+1, 1.0, H, k_in+1, H, k_in+1, 0.0, HRitz1, k_in+1);
 
+printf("\n\nHarmonic Ritz 1st block matrix is\n\n");
+//print_matrix(HRitz1, k_in+1, k_in+1);
+
+printf("\n\n\n");
+print_matrix(ERitz, k_in, pd);
 
 //}// End of while loop 
 /************
@@ -630,4 +651,15 @@ void GRot(double dx, double dy, double cs, double sn)
     cs = 1.0 / sqrt( 1.0 + temp*temp );
     sn = temp * cs;
   }
+}
+
+void identity(double *ee, int size){
+for(int i =0;i<size;i++){
+   for(int j=0;j<size; j++){
+         if(i==j)
+           ee[i*size+j] = 1.0;
+         else 
+           ee[i*size+j] = 0.0;
+  }  
+}
 }

@@ -49,9 +49,9 @@ double *E, *ERitz;
 //Pointers for Preconditioning
 double *HRitz1, *HRitz2, *H2, *H1;
 
-int rows, rhs;
+int rows, rhs, k1, pd1;
 int M, N, nz, work, lwork;
-int initer, iter, i, j, k;
+int initer, iter, i, j, k,ii;
 int info,ldb,lda, k_in;
 int sym, sym1;
 double eps, tol;
@@ -359,21 +359,26 @@ for (int initer = pd;initer<m;initer++){
 
 
 } //End of inner k_in loop
-E = (double*)calloc((k_in+1)*(k_in+1), sizeof(double));
-identity(E, k_in+1);
-print_matrix(E,k_in+1,k_in+1);
 
+k1 = k_in+1;
+pd1 =3;
 
+E = (double*)calloc(k1*k1, sizeof(double));
+identity(E, k1);
+print_matrix(E,k1,k1);
+
+ 
 HRitz1= (double*)calloc((k_in+1)*(k_in+1), sizeof(double));
 HRitz2 = (double*)calloc(k_in*k_in, sizeof(double));
-ERitz = (double*)calloc(k_in*pd,sizeof(double));
+
+ERitz = (double*)calloc((k_in+1)*pd1,sizeof(double));
 
 H1= (double*)calloc(pd*pd, sizeof(double));
 H2 = (double*)calloc(k_in*pd, sizeof(double));
 
-   for(i =0;i<k_in;i++){
-     for(j =k_in-pd, k =0; j<k_in && k<pd; j++, k++){
-                ERitz[i*pd+k]=E[i*k_in+j];
+   for(i =k1-pd1, ii =0; i<k1 && ii<pd1 ;i++, ii++){ 
+       for(j =0;j<k1;j++){
+                ERitz[ii*k1+j]=E[i*k1+j];
           }
     } 
       
@@ -389,7 +394,7 @@ printf("\n\nHarmonic Ritz 1st block matrix is\n\n");
 //print_matrix(HRitz1, k_in+1, k_in+1);
 
 printf("\n\n\n");
-print_matrix(ERitz, k_in, pd);
+print_matrix(ERitz,pd1 ,k_in+1 );
 
 //}// End of while loop 
 /************

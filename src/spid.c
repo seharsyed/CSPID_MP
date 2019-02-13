@@ -273,7 +273,7 @@ info = LAPACKE_dgesvd( LAPACK_ROW_MAJOR, 'A', 'A', rhs, rhs, T, rhs,
     }    
 
   //printf("\n\nSVD Successful\n");
-
+   
    m = restart+pd;
 
    V = (double*)calloc(rows*m, sizeof(double)); //Orthogonal Basis
@@ -362,8 +362,7 @@ for (int initer = pd;initer<m;initer++){
 } //End of inner k_in loop
 
 k1 = k_in+1;
-
-
+pd = 6;
 E = (double*)calloc(k1*k1, sizeof(double));
 identity(E, k1);
 print_matrix(E,k1,k1);
@@ -412,7 +411,7 @@ H23 = (double*)calloc(k1*pd, sizeof(double));
 cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, k1, k1, k1, 1.0, H, k1, H, k1, 0.0, H1, k1);
    // cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,pd ,pd ,k1 , 1.0, H21, pd, H22, pd, 0.0, H21, pd)
        cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,pd ,pd ,k1 , 1.0, &H[k1*restart+(k1-pd)], pd, &H[k1*restart+(k1-pd)], pd, 0.0, H23, pd);
-//          cblas_dgemm(
+          cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, k1, k1, pd, 1.0, H23, pd, ERitz, k1, 0.0, HRitz1, k1);
 
 printf("\n\nHarmonic Ritz 1st block matrix is\n\n");
 print_matrix(HRitz2, k1, k1);
@@ -425,6 +424,9 @@ print_matrix(ERitz,pd ,k1 );
 
 printf("\n\n2nd Multiplication of  block matrix is\n\n");
 print_matrix(H23,k1 ,pd );
+
+printf("\n\nResultant matrix is\n\n");
+print_matrix(HRitz1, k1,k1);
 //}// End of while loop 
 /************
 Debugging

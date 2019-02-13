@@ -47,7 +47,8 @@ double *B,*X, *R0, *trp,*tau, *T, *Q, *U, *Sigma, *Sigma_title,*VT;
 double *H, *V, *w, *S1, *C, *VT1;
 double *E, *ERitz;
 //Pointers for Preconditioning
-double *HRitz1, *HRitz2, *H21,*H22, *H1;
+double *HRitz1, *HRitz2,*H23, *H1;
+//double *H21,*H22;
 
 int rows, rhs, k1, pd1;
 int M, N, nz, work, lwork;
@@ -374,9 +375,9 @@ HRitz2 = (double*)calloc(k1*k1, sizeof(double));
 ERitz = (double*)calloc((k1)*pd,sizeof(double));
 
 H1= (double*)calloc(k1*k1, sizeof(double));
-H21 = (double*)calloc(pd*k1, sizeof(double));
-H22 = (double*)calloc(pd*pd,sizeof(double));
-
+//H21 = (double*)calloc(pd*k1, sizeof(double));
+//H22 = (double*)calloc(pd*pd,sizeof(double));
+H23 = (double*)calloc(k1*pd, sizeof(double));
    for(i =k1-pd, ii =0; i<k1 && ii<pd ;i++, ii++){ 
        for(j =0;j<k1;j++){
                 ERitz[ii*k1+j]=E[i*k1+j];
@@ -385,12 +386,12 @@ H22 = (double*)calloc(pd*pd,sizeof(double));
       
  for (i =0;i<k1;i++){
     for(j=0;j<k1;j++){
-    HRitz2[i*k1+j] = H[i*restart+j];
+    HRitz2[j*k1+i] = H[i*restart+j];
    }
 } 
 
-get_trans(HRitz2, HRitz2, k1,k1);
-  
+//get_trans(HRitz2, HRitz2, k1,k1);
+  /*
    //H(bloc_jplusp,bloc_H)
   for(i=k1, ii =0;i<=k1+pd && ii<pd;i++,ii++){
      for(j=0;j<k1;j++){
@@ -404,12 +405,14 @@ get_trans(HRitz2, HRitz2, k1,k1);
       H22[ii*pd+jj] = H[i*restart+j];
  }
 }
-   
+*/   
  
 // cblas_dgemm (CBLAS_LAYOUT,transa,transb, m (rows of A), n(cols of B), k(cols of A), alpha, *a, lda,*b, ldb, beta, double *c, ldc)
 
 cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, k1, k1, k1, 1.0, H, k1, H, k1, 0.0, H1, k1);
-   // cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, k_in+2, , k_in+1, 1.0, H, k_in+1, H, k_in+1, 0.0, HRitz1, k_in+1);
+   // cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,pd ,pd ,k1 , 1.0, H21, pd, H22, pd, 0.0, H21, pd)
+       cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,pd ,pd ,k1 , 1.0, &H[k1*restart+(k1-pd)], pd, &H[k1*restart+(k1-pd)], pd, 0.0, H23, pd);
+//          cblas_dgemm(
 
 printf("\n\nHarmonic Ritz 1st block matrix is\n\n");
 print_matrix(HRitz2, k1, k1);
@@ -420,11 +423,8 @@ print_matrix(H1, k1, k1);
 printf("\n\n\n");
 print_matrix(ERitz,pd ,k1 );
 
-printf("\n\n\n H21 bloc is\n");
-print_matrix(H21,pd ,k1 );
-
-printf("\n\n\n H22 block is\n");
-print_matrix(H22, pd,pd);
+printf("\n\n2nd Multiplication of  block matrix is\n\n");
+print_matrix(H23,k1 ,pd );
 //}// End of while loop 
 /************
 Debugging

@@ -51,7 +51,7 @@ double *HRitz1, *HRitz2, *H21,*H22, *H1;
 
 int rows, rhs, k1, pd1;
 int M, N, nz, work, lwork;
-int initer, iter, i, j, k,ii;
+int initer, iter, i, j, k,ii, jj;
 int info,ldb,lda, k_in;
 int sym, sym1;
 double eps, tol;
@@ -385,7 +385,7 @@ H22 = (double*)calloc(pd*pd,sizeof(double));
       
  for (i =0;i<k1;i++){
     for(j=0;j<k1;j++){
-    HRitz2[i*k1+j] = H[i*k1+j];
+    HRitz2[i*k1+j] = H[i*restart+j];
    }
 } 
 
@@ -394,13 +394,17 @@ get_trans(HRitz2, HRitz2, k1,k1);
    //H(bloc_jplusp,bloc_H)
   for(i=k1, ii =0;i<=k1+pd && ii<pd;i++,ii++){
      for(j=0;j<k1;j++){
-      H21[ii*k1+j] = H[i*k1+j];
+      H21[ii*k1+j] = H[i*restart+j];
   }    
 }
 
  //H(bloc_jplusp,bloc_lastp)
-  for(i = k1, ii = 0; i<=k1+pd, ii<pd;i++,ii++){
-    for(j = k1-pd,jj =0;j< 
+  for(i = k1, ii = 0; i<=k1+pd && ii<pd;i++,ii++){
+    for(j = k1-pd,jj =0;j<k1 && jj<pd;j++,jj++){
+      H22[ii*pd+jj] = H[i*restart+j];
+ }
+}
+   
  
 // cblas_dgemm (CBLAS_LAYOUT,transa,transb, m (rows of A), n(cols of B), k(cols of A), alpha, *a, lda,*b, ldb, beta, double *c, ldc)
 
@@ -418,6 +422,9 @@ print_matrix(ERitz,pd ,k1 );
 
 printf("\n\n\n H21 bloc is\n");
 print_matrix(H21,pd ,k1 );
+
+printf("\n\n\n H22 block is\n");
+print_matrix(H22, pd,pd);
 //}// End of while loop 
 /************
 Debugging

@@ -17,8 +17,8 @@ Institute: Free University of Bolzano
 #include <math.h>
 #include <lapacke.h>
 #include <string.h>
-#include <cblas.h>
-#include <blas_sparse.h>
+#include "cblas.h"
+//#include <blas_sparse.h>
 
 #include "clock.h"
 #include "coo.h"
@@ -48,7 +48,7 @@ double *H, *V, *w, *S1, *C, *VT1;
 double *E, *ERitz;
 //Pointers for Preconditioning
 double *HRitz1, *HRitz2,*H23, *H1;
-//double *H21,*H22;
+double *H21,*H22;
 
 int rows, rhs, k1, pd1;
 int M, N, nz, work, lwork;
@@ -374,8 +374,8 @@ HRitz2 = (double*)calloc(k1*k1, sizeof(double));
 ERitz = (double*)calloc((k1)*pd,sizeof(double));
 
 H1= (double*)calloc(k1*k1, sizeof(double));
-//H21 = (double*)calloc(pd*k1, sizeof(double));
-//H22 = (double*)calloc(pd*pd,sizeof(double));
+H21 = (double*)calloc(pd*k1, sizeof(double));
+H22 = (double*)calloc(pd*pd,sizeof(double));
 H23 = (double*)calloc(k1*pd, sizeof(double));
    for(i =k1-pd, ii =0; i<k1 && ii<pd ;i++, ii++){ 
        for(j =0;j<k1;j++){
@@ -390,11 +390,11 @@ H23 = (double*)calloc(k1*pd, sizeof(double));
 } 
 
 //get_trans(HRitz2, HRitz2, k1,k1);
-  /*
+  
    //H(bloc_jplusp,bloc_H)
   for(i=k1, ii =0;i<=k1+pd && ii<pd;i++,ii++){
      for(j=0;j<k1;j++){
-      H21[ii*k1+j] = H[i*restart+j];
+      H21[j*k1+ii] = H[i*restart+j];
   }    
 }
 
@@ -404,7 +404,7 @@ H23 = (double*)calloc(k1*pd, sizeof(double));
       H22[ii*pd+jj] = H[i*restart+j];
  }
 }
-*/   
+   
  
 // cblas_dgemm (CBLAS_LAYOUT,transa,transb, m (rows of A), n(cols of B), k(cols of A), alpha, *a, lda,*b, ldb, beta, double *c, ldc)
 
@@ -427,6 +427,12 @@ print_matrix(H23,k1 ,pd );
 
 printf("\n\nResultant matrix is\n\n");
 print_matrix(HRitz1, k1,k1);
+
+printf("\n\nH21 block matrix is\n\n");
+print_matrix(H21, k1, pd);
+
+printf("\n\nH22 is\n\n");
+print_matrix(H22, pd, pd);
 //}// End of while loop 
 /************
 Debugging

@@ -39,6 +39,7 @@ void subtract(double xx[], double yy[], double result[], int num);
 void scalvec(int n, double sa, double *sx, double *sy, int incx);
 void GRot(double dx, double dy, double cs, double sn);
 void identity(double *ee, int size);
+double add_matrix(double xx[], double yy[], double result[], int rows, int cols);
 
 int main (int argc, char * argv[])
 {
@@ -47,7 +48,7 @@ double *B,*X, *R0, *trp,*tau, *T, *Q, *U, *Sigma, *Sigma_title,*VT;
 double *H, *V, *w, *S1, *C, *VT1;
 double *E, *ERitz;
 //Pointers for Preconditioning
-double *HRitz1, *HRitz2,*H23, *H1;
+double *HRitz1, *HRitz2,*H23, *H1, *H4;
 double *H21,*H22;
 
 int rows, rhs, k1, pd1;
@@ -362,7 +363,7 @@ for (int initer = pd;initer<m;initer++){
 } //End of inner k_in loop
 
 k1 = k_in+1;
-pd = 6;
+//pd = 6;
 E = (double*)calloc(k1*k1, sizeof(double));
 identity(E, k1);
 print_matrix(E,k1,k1);
@@ -374,10 +375,12 @@ HRitz2 = (double*)calloc(k1*k1, sizeof(double));
 ERitz = (double*)calloc((k1)*pd,sizeof(double));
 
 H1= (double*)calloc(k1*k1, sizeof(double));
-H21 = (double*)calloc(pd*k1, sizeof(double));
-H22 = (double*)calloc(pd*pd,sizeof(double));
+//H21 = (double*)calloc(pd*k1, sizeof(double));
+//H22 = (double*)calloc(pd*pd,sizeof(double));
 H23 = (double*)calloc(k1*pd, sizeof(double));
-   for(i =k1-pd, ii =0; i<k1 && ii<pd ;i++, ii++){ 
+H4 = (double*)calloc(k1*k1, sizeof(double));
+
+for(i =k1-pd, ii =0; i<k1 && ii<pd ;i++, ii++){ 
        for(j =0;j<k1;j++){
                 ERitz[ii*k1+j]=E[i*k1+j];
           }
@@ -392,9 +395,9 @@ H23 = (double*)calloc(k1*pd, sizeof(double));
 //get_trans(HRitz2, HRitz2, k1,k1);
   
    //H(bloc_jplusp,bloc_H)
-  for(i=k1, ii =0;i<=k1+pd && ii<pd;i++,ii++){
+/*  for(i=k1, ii =0;i<=k1+pd && ii<pd;i++,ii++){
      for(j=0;j<k1;j++){
-      H21[j*k1+ii] = H[i*restart+j];
+      H21[ii*k1+j] = H[i*restart+j];
   }    
 }
 
@@ -404,35 +407,41 @@ H23 = (double*)calloc(k1*pd, sizeof(double));
       H22[ii*pd+jj] = H[i*restart+j];
  }
 }
-   
+  */ 
  
 // cblas_dgemm (CBLAS_LAYOUT,transa,transb, m (rows of A), n(cols of B), k(cols of A), alpha, *a, lda,*b, ldb, beta, double *c, ldc)
 
 cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, k1, k1, k1, 1.0, H, k1, H, k1, 0.0, H1, k1);
-   // cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,pd ,pd ,k1 , 1.0, H21, pd, H22, pd, 0.0, H21, pd)
-       cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,pd ,pd ,k1 , 1.0, &H[k1*restart+(k1-pd)], pd, &H[k1*restart+(k1-pd)], pd, 0.0, H23, pd);
+//    cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,pd ,pd ,k1 , 1.0, H21, pd, H22, pd, 0.0, H23, pd);
+      cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,pd ,pd ,k1 , 1.0, &H[k1*restart+(k1-pd)], pd, &H[k1*restart+(k1-pd)], pd, 0.0, H23, pd);
           cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, k1, k1, pd, 1.0, H23, pd, ERitz, k1, 0.0, HRitz1, k1);
+             add_matrix(HRitz1, HRitz2, H4, k1, k1);           
 
-printf("\n\nHarmonic Ritz 1st block matrix is\n\n");
+printf("\n\nHRitz2 is\n\n");
 print_matrix(HRitz2, k1, k1);
 
 printf("\n\n1st Multiplication of  block matrix is\n\n");
 print_matrix(H1, k1, k1);
 
-printf("\n\n\n");
-print_matrix(ERitz,pd ,k1 );
+//printf("\n\n\n");
+//print_matrix(ERitz,pd ,k1 );
 
-printf("\n\n2nd Multiplication of  block matrix is\n\n");
+printf("\n\nHjplusp' * Hlastbloc givess\n\n");
 print_matrix(H23,k1 ,pd );
 
-printf("\n\nResultant matrix is\n\n");
+printf("\n\nHRitz1 matrix is\n\n");
 print_matrix(HRitz1, k1,k1);
 
+printf("\n\nResultant after addition is\n\n");
+print_matrix(H4, k1,k1);
+
+/*
 printf("\n\nH21 block matrix is\n\n");
-print_matrix(H21, k1, pd);
+print_matrix(H21, pd, k1);
 
 printf("\n\nH22 is\n\n");
-print_matrix(H22, pd, pd);
+print_matrix(H22, pd, pd); */ 
+
 //}// End of while loop 
 /************
 Debugging
@@ -616,6 +625,14 @@ double dot_product(double v[], double u[], int n)
     return result;
 }
 
+double add_matrix(double xx[], double yy[], double result[], int rows, int cols) {
+     
+     for (int ii = 0; ii < rows; ii++) {
+        for (int jj = 0; jj< cols; jj++){      
+         result[ii][jj] = xx[ii][jj]+yy[ii][jj];
+     }
+ }
+}
 void subtract(double xx[], double yy[], double result[], int num) {
     for (int ii = 0; ii < num; ii++) {
         result[ii] = xx[ii]-yy[ii];

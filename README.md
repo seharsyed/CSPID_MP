@@ -11,8 +11,13 @@ The main folder is divided into these parts:
 
 4. src: all the source files 
 
-Dependencies: ARPACK -- apt-get install libsuitesparse-dev libarpack2-dev 
-             #WIll add dependencies for lapacke and cblas
+Dependencies: ARPACK -- sudo apt-get install libsuitesparse-dev libarpack2-dev 
+                        sudo apt-get install liblapack3
+                        sudo apt-get install liblapack-dev
+                        sudo apt-get install libopenblas-base
+                        sudo apt-get install libopenblas-dev
+                        sudo apt-get install liblapacke-dev libatlas-base-dev 
+                  
 
 The code is compiled by accessing the src folder. 
 once inside the src folder 

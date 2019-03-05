@@ -10,14 +10,16 @@ The main folder is divided into these parts:
 3. lib: contains the static or dynamic library (cblas, arpack, lapack)
 
 4. src: all the source files 
-
+ 
 Dependencies: ARPACK -- sudo apt-get install libsuitesparse-dev libarpack2-dev 
                         sudo apt-get install liblapack3
                         sudo apt-get install liblapack-dev
                         sudo apt-get install libopenblas-base
                         sudo apt-get install libopenblas-dev
                         sudo apt-get install liblapacke-dev libatlas-base-dev 
-                        add dependencies libtool, mkl                   
+     
+TODO:                   add dependencies of arpack, libtool, mkl
+                        Write bash file for installion                   
                        
 The code is compiled by accessing the src folder. 
 once inside the src folder 
@@ -35,6 +37,7 @@ once inside the src folder
  
   Output: 
      
+TODO: add .mtx file in bash installation 
 
  1) For BGMRES output type 
     ./bgmres filename.mtx 

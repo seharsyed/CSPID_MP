@@ -1,5 +1,5 @@
 /****************************************
-Testing Block GMRES Method with Deflation
+ Simple Block GMRES Method
 
 Author: Sehar Naveed
         sehar.naveed@stud-inf.unibz.it
@@ -42,8 +42,9 @@ void GRot(double *dx, double *dy, double* cs, double*sn);
 int main (int argc, char * argv[])
 {
 
-double *B,*X, *R0, *trp,*tau, *T, *Q, *U, *Sigma, *Sigma_title,*VT;
-double *H, *V, *w, *S1, *C, *VT1;
+double *B,*X, *R0, *tmp,*tau, *scal, *Q;
+double *H, *V, *w, *C;
+double *nrm, *relres, *vtol;
 
 int rows, rhs;
 int M, N, nz, work, lwork;
@@ -56,7 +57,7 @@ int ret_code;
 CSR_Matrix A;
 //CSC_Matrix csc;
 
-int restart, m, pd =0;
+int restart, m;
 FILE *fp;
 char * line = NULL;
 size_t len = 0;
@@ -111,38 +112,42 @@ filename = argv[1];  //Passing on the file
 ********************************/
 iter = 0;
 rows = A.rows;
-rhs = 10;
-restart = 10;
+rhs = 10;                   //Change it to get rhs from user
+restart = 10;              //Change it later to get it from user
 eps = 0.1;
 tol = 1e-6;
-// thatm = restart+pd; //In matlab m = inner+pd
+// m = restart+rhs; //In matlab m = inner+p
 
 //Initialize and allocate B
 
 B = calloc(rows*rhs, sizeof(double)); //RHS
 X = calloc(rows*rhs, sizeof(double)); //Solution Array
 R0 = calloc(rows*rhs, sizeof(double));//Residual Array
-trp = calloc(rhs*rows, sizeof(double)); //Temporary Array for keeping transpose of Matrices
+tmp = calloc(rhs*rows, sizeof(double)); //Temporary Array for keeping transpose of Matrices
 
 
-//nrm = calloc(rhs, sizeof(double)); 
+nrm = calloc(rhs, sizeof(double)); 
 w = calloc(rows, sizeof(double));  //Allocation of Vector Norm//
+vtol = calloc(rhs, sizeof(double)); //Vector of tolerance
 //y = calloc(rows, sizeof(double));  //Allocation of temperoray vector//
-//relres = (double *)malloc(rhs* sizeof(double)); // Allocation of Relative Residual//
-tau = calloc(rhs,sizeof(double));
-T = calloc(rhs*rhs, sizeof(double));  //R factor of QR factorization of R0
+
+relres = (double *)malloc(rhs* sizeof(double)); // Allocation of Relative Residual//
+
+tau = calloc(rhs,sizeof(double)); //array for LAPACK calculation
+
+scal = calloc(rhs*rhs, sizeof(double));  //R factor of QR factorization of R0
 Q = calloc(rows*rhs, sizeof(double)); //Q factor of QR factorization of R0
 
 //Matrices used for Singular Value Decpmosition
-U = calloc(rhs*rhs, sizeof(double)); //Left Singular Values of R0
-Sigma = calloc(rhs*rhs, sizeof(double)); //Diagonal matrix
-Sigma_title = calloc(rhs, sizeof(double));
-VT = calloc(rhs*rhs, sizeof(double)); //Right Singular values of R0 
+//U = calloc(rhs*rhs, sizeof(double)); //Left Singular Values of R0
+//Sigma = calloc(rhs*rhs, sizeof(double)); //Diagonal matrix
+//Sigma_title = calloc(rhs, sizeof(double));
+//VT = calloc(rhs*rhs, sizeof(double)); //Right Singular values of R0 
 
-//V = calloc(rhs*rows, sizeof(double));
+V = calloc(rhs*rows, sizeof(double));
 
 //E = calloc(m*rhs,sizeof(double));
-//S = calloc(restart*restart, sizeof(double));
+S = calloc(restart*restart, sizeof(double));
 
 /*******************************
 *Generate Random RHS Matrix 
@@ -160,14 +165,16 @@ print_matrix(B,rows,rhs);
 /***********************************************************
 *Transpose of B/ Calculation Norm and Relative Residual Norm 
 ************************************************************/
+printf("\n\nTranspose of B \n");
+get_trans(B,tmp,rows,rhs);
+print_matrix(tmp,rhs,rows);
 
-/*
 printf("\n\nThe norm of each RHS is \n");
 
 ldb = rows;
   for (k = 0; k<rhs;k++){
         // for (i = 0; i <rows;i++){
-    nrm[k] = vecnorm(rows,&T[k*ldb], &T[k*ldb]);
+    nrm[k] = vecnorm(rows,&tmp[k*ldb], &tmp[k*ldb]);
       if (nrm[k]==0.0){
          nrm[k] = 1.0;
          }
@@ -175,7 +182,7 @@ ldb = rows;
  
 print_vector("\nnorm =\n ", nrm, rhs);
  printf("\n");
-
+/*
 for (k=0;k<csr.rows; k++){
  e[k] = vecnorm(nrhs, R0[k], R0[k]);
  }
@@ -186,9 +193,15 @@ for (k=0;k<csr.rows; k++){
  print_vector("\n Relative Residual Norm =\n ", relres, csr.rows);
 */
 
-
+ m = restart+rhs;
+ 
+ V = (double*)calloc(rows*m, sizeof(double)); //Orthogonal Basis
+ H = (double*)calloc(m*rhs, sizeof(double)); //Hessenberg Matrix
+ S = (double*)calloc(restart*rhs, sizeof(double));
+//Resultant Matrix after Multiplication V and S
+ C = (double*)calloc(rows*rhs, sizeof(double));
 /********************
-SVD & QR FACTORS 
+ QR FACTORiZATION
 *********************/
 
 
@@ -204,13 +217,13 @@ printf("The R factor from QR factorization is\n\n");
 for (i=0;i<rhs;i++){
   for(j=0;j<rhs;j++){
              if(i<=j){
-                T[i*rhs+j] = B[i*rhs+j];
+                scal[i*rhs+j] = B[i*rhs+j];
      }
   }
 }
 
 printf("\nThe R factor is\n");
-print_matrix(T,rhs,rhs);
+print_matrix(scal,rhs,rhs);
 
 /* Extracting V as Q factor of B */
 
@@ -230,18 +243,19 @@ info = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, rows, rhs, rhs, B, rhs, tau);
        // Extracting the Q factor of B//
          for (i =0;i<rows; i++){
            for (j=0;j<rhs;j++){
-             Q[i*rhs+j] = B[i*rhs+j];
+             V[i*rhs+j] = B[i*rhs+j];
           }  
       }
-     print_matrix(Q, rows, rhs);
+     print_matrix(V, rows, rhs);
      printf("\n\nQR Factorization, extraction of V and R completed successfully\n");
 
-//SVD routines
+
 //dgesvd (jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
-info = LAPACKE_dgesvd( LAPACK_ROW_MAJOR, 'A', 'A', rhs, rhs, T, rhs,
-                        Sigma, U, rhs, VT, rhs, tau );
+//info = LAPACKE_dgesvd( LAPACK_ROW_MAJOR, 'A', 'A', rhs, rhs, T, rhs,
+//                        Sigma, U, rhs, VT, rhs, tau );
         /* Check for convergence */
-        if( info > 0 ) {
+/*  
+      if( info > 0 ) {
                 printf( "The algorithm computing SVD failed to converge.\n" );
                 exit( 1 );
          }    
@@ -259,31 +273,10 @@ info = LAPACKE_dgesvd( LAPACK_ROW_MAJOR, 'A', 'A', rhs, rhs, T, rhs,
    for (i = 0;i<pd;i++){
      for (j= 0; j<pd; j++){
           if (i==j)
-            Sigma[i*pd+j] = Sigma_title[i];
-         else 
-           Sigma[i*pd+j] = 0.0;
-        }
-    }    
-
-  printf("\n\nSVD Successful\n");
-
-   m = restart+pd;
-
-   V = (double*)calloc(rows*m, sizeof(double)); //Orthogonal Basis
-   H = (double*)calloc(m*pd, sizeof(double)); //Hessenberg Matrix
-   S1 = (double*)calloc(restart*pd, sizeof(double)); 
-   VT1 =(double*)calloc(rhs*pd, sizeof(double)); //Matrix for saving Sigma*VT
-   
-   //Resultant Matrix after Multiplication V and S
-   C = (double*)calloc(rows*pd, sizeof(double));
-
-  //Construction of V_1 of the block V
-
-   //V(:,1:pd) = Q*U(:,1:pd);
-   cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, rhs, rhs, 1.0, Q, rhs, U, pd, 1.0, trp, pd);
-
+            Sigma[i*pd
  //Allocation of transpose of Q*U to V for column multiplication 
-   for (i =0;i<rows; i++){
+  
+  for (i =0;i<rows; i++){
      for (j=0;j<pd;j++){
          V[j*rows+i] = trp[i*pd+j];
       }
@@ -317,11 +310,6 @@ for (int initer = pd;initer<m;initer++){
        /**************
         Givens Rotation
        **************/
-            
-    
-
-
-
 
        //Reading the S matrix from MATLB Source, I need to port this step in C
        // E=[eye(p,p);zeros(k_in,p)]*scal;
@@ -329,28 +317,27 @@ for (int initer = pd;initer<m;initer++){
 
      //Matrix Read      
    
-        fp = fopen("S1.txt", "r");//Right Now I am reading S obtained from MATLAB results
+        fp = fopen("S.txt", "r");//Right Now I am reading S obtained from MATLAB results
         if (fp == NULL)
         exit(0);
 
         while(!feof(fp)){
               for(i=0;i<restart;i++){
                   for(j=0;j<pd;j++){
-                fscanf(fp,"%lf",&S1[i*restart+j]);
+                fscanf(fp,"%lf",&S[i*restart+j]);
          }
         }
      }  //End of while loop for reading matrix
 
-  //Sigma*VT 
-  
+
+  /*
      for (i =0; i<pd;i++){   
       scalvec(pd, Sigma_title[i], &VT[i*pd], &VT1[i*pd], 1);
       }
-
-    cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, pd, pd, 1.0, V, rows, S1, pd, 0.0, C, pd);
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, pd, pd, 1.0, C, pd, VT1, pd, 1.0, X, pd);
-
-
+*/
+    cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, p, p, 1.0, V, rows, S, pd, 0.0, C, pd);  //V(:,1:k_in)*S = C
+      //X = X0+(V*S = C)
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, pd, pd, 1.0, C, pd, VT1, pd, 1.0, X, pd); 
 
 } //End of outer for loop
 

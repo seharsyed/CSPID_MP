@@ -37,21 +37,22 @@ void matriscopy (double * destmat, double * srcmat, int rowcount, int columncoun
 double dot_product(double v[], double u[],  int n);
 void subtract(double xx[], double yy[], double result[], int num);
 void scalvec(int n, double sa, double *sx, double *sy, int incx);
-void GRot(double *dx, double *dy, double* cs, double*sn);
+void GRot(double dx, double dy, double cs, double sn);
 
 int main (int argc, char * argv[])
 {
 
 double *B,*X, *R0, *tmp,*tau, *scal, *Q;
-double *H, *V, *w, *C;
-double *nrm, *relres, *vtol;
+double *H, *V, *w, *C, *S;
+double *nrm, *relres, *vtol, *e;
+double tol, eps; 
 
-int rows, rhs;
+int rows, rhs, p;
 int M, N, nz, work, lwork;
 int initer, iter, i, j, k;
 int info,ldb,lda, k_in;
 int sym, sym1;
-double eps, tol;
+
 
 int ret_code;
 CSR_Matrix A;
@@ -83,7 +84,7 @@ filename = argv[1];  //Passing on the file
 /*TODO:Small tasks: File Management
 
        1 Change the name from csr to A and the corresponding variables  : DONE
-       2 Create an array with vector tolerance
+       2 Create an array with vector tolerance : Done
        3 Shift transpose and print functions to utility and make header file 
        4 Create Residual Matrix with residual block*/
 
@@ -116,6 +117,7 @@ rhs = 10;                   //Change it to get rhs from user
 restart = 10;              //Change it later to get it from user
 eps = 0.1;
 tol = 1e-6;
+p = rhs;
 // m = restart+rhs; //In matlab m = inner+p
 
 //Initialize and allocate B
@@ -129,25 +131,17 @@ tmp = calloc(rhs*rows, sizeof(double)); //Temporary Array for keeping transpose 
 nrm = calloc(rhs, sizeof(double)); 
 w = calloc(rows, sizeof(double));  //Allocation of Vector Norm//
 vtol = calloc(rhs, sizeof(double)); //Vector of tolerance
+e = calloc(rhs, sizeof(double));
+
 //y = calloc(rows, sizeof(double));  //Allocation of temperoray vector//
 
 relres = (double *)malloc(rhs* sizeof(double)); // Allocation of Relative Residual//
 
 tau = calloc(rhs,sizeof(double)); //array for LAPACK calculation
 
-scal = calloc(rhs*rhs, sizeof(double));  //R factor of QR factorization of R0
-Q = calloc(rows*rhs, sizeof(double)); //Q factor of QR factorization of R0
-
-//Matrices used for Singular Value Decpmosition
-//U = calloc(rhs*rhs, sizeof(double)); //Left Singular Values of R0
-//Sigma = calloc(rhs*rhs, sizeof(double)); //Diagonal matrix
-//Sigma_title = calloc(rhs, sizeof(double));
-//VT = calloc(rhs*rhs, sizeof(double)); //Right Singular values of R0 
-
-V = calloc(rhs*rows, sizeof(double));
+scal = calloc(rhs*rhs, sizeof(double));  //R factor of QR factorization of R 
 
 //E = calloc(m*rhs,sizeof(double));
-S = calloc(restart*restart, sizeof(double));
 
 /*******************************
 *Generate Random RHS Matrix 
@@ -182,16 +176,33 @@ ldb = rows;
  
 print_vector("\nnorm =\n ", nrm, rhs);
  printf("\n");
-/*
-for (k=0;k<csr.rows; k++){
- e[k] = vecnorm(nrhs, R0[k], R0[k]);
+
+//R0 = B-A*X , since initial value is zero so here we are using R0 = B
+
+for (k=0;k<rhs; k++){
+ e[k] = vecnorm(rows, &tmp[k*ldb], &tmp[k*ldb]);
  }
  //Residual Norm 
-  for (k=0; k<csr.rows; k++){
-  relres[k] = e[k]/w[k];
+  for (k=0; k<rhs; k++){
+  relres[k] = e[k]/nrm[k];
   }
- print_vector("\n Relative Residual Norm =\n ", relres, csr.rows);
-*/
+ print_vector("\n\n Relative Residual Norm =\n ", relres, rhs);
+
+//Initialtization of vector of tolerance
+for (k =0;k<rhs;k++){
+        vtol[k] = tol;
+    }
+
+ print_vector("\n\n Vector of Tolerance =\n ", vtol, rhs);
+
+for(k = 0;k<rhs;k++){
+    if(relres[k]<vtol[k])
+     exit(0);
+}
+
+/*****************************
+Orthogonal Space Calculation 
+*****************************/
 
  m = restart+rhs;
  
@@ -249,46 +260,12 @@ info = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, rows, rhs, rhs, B, rhs, tau);
      print_matrix(V, rows, rhs);
      printf("\n\nQR Factorization, extraction of V and R completed successfully\n");
 
-
-//dgesvd (jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
-//info = LAPACKE_dgesvd( LAPACK_ROW_MAJOR, 'A', 'A', rhs, rhs, T, rhs,
-//                        Sigma, U, rhs, VT, rhs, tau );
-        /* Check for convergence */
-/*  
-      if( info > 0 ) {
-                printf( "The algorithm computing SVD failed to converge.\n" );
-                exit( 1 );
-         }    
-
-          for (i =0;i<rhs;i++){
-          Sigma_title[i] = max(Sigma[i]-eps*tol,0);
-          }
-
-        for (i = 0; i<rhs;i++){
-           if(Sigma_title[i]>0){
-            pd++;
-            }           
-        }
-
-   for (i = 0;i<pd;i++){
-     for (j= 0; j<pd; j++){
-          if (i==j)
-            Sigma[i*pd
- //Allocation of transpose of Q*U to V for column multiplication 
-  
-  for (i =0;i<rows; i++){
-     for (j=0;j<pd;j++){
-         V[j*rows+i] = trp[i*pd+j];
-      }
-    } 
-
-
 /*****************************
 Block Arnoldi Variant
 ******************************/
 
-for (int initer = pd;initer<m;initer++){
-         k_in = initer - pd;
+for (int initer = p;initer<m;initer++){
+         k_in = initer - p;
             csr_mvp_sym2(&A,&V[k_in*rows],w); //Sparse-Matrix Vector Multiplication */ 
         /**********************
          Modified Gram-Schmidt 
@@ -323,7 +300,7 @@ for (int initer = pd;initer<m;initer++){
 
         while(!feof(fp)){
               for(i=0;i<restart;i++){
-                  for(j=0;j<pd;j++){
+                  for(j=0;j<p;j++){
                 fscanf(fp,"%lf",&S[i*restart+j]);
          }
         }
@@ -335,9 +312,9 @@ for (int initer = pd;initer<m;initer++){
       scalvec(pd, Sigma_title[i], &VT[i*pd], &VT1[i*pd], 1);
       }
 */
-    cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, p, p, 1.0, V, rows, S, pd, 0.0, C, pd);  //V(:,1:k_in)*S = C
+    cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, p, p, 1.0, V, rows, S, p, 0.0, C, p);  //V(:,1:k_in)*S = C
       //X = X0+(V*S = C)
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, pd, pd, 1.0, C, pd, VT1, pd, 1.0, X, pd); 
+       // cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, p, p, 1.0, C, p, , p, 1.0, X, pd); 
 
 } //End of outer for loop
 
@@ -345,22 +322,6 @@ for (int initer = pd;initer<m;initer++){
 /************
 Debugging
 *************/
-
-printf("\n\nThe Left Singular Values are\n");
- print_matrix(U, rhs, rhs);
- 
-printf("\n\nThe Sigma Matrix is\n");
-print_matrix(Sigma, rhs, rhs);
- 
-print_vector("\n\nSigma_title\n", Sigma_title, rhs);
-
- 
-printf("\n\n\nThe Right Singular Matrix is\n");
-print_matrix(VT, rhs, rhs);
-
-printf("\n The Right Singular Matrix after Multiplication is\n");
-print_matrix(VT1, rhs, rhs);
-
 printf("\n\nThe Orthogonal basis V is\n");
 print_matrix(V,m, rows);
 
@@ -370,27 +331,26 @@ printf("\n\nThe Hessenberg Matrix is\n\n");
 print_matrix(H,m, restart);
 
 printf("\n\nThe matrix S is\n");
-print_matrix(S1, pd, pd);
+print_matrix(S, p, p);
 
 printf("\n\nV and S gives\n");
-print_matrix(C, rows, pd);
+print_matrix(C, rows, p);
 
 printf("\n\n The final solution is\n");
-print_matrix(X, rows, pd);
+print_matrix(X, rows, p);
 /******************************
 Free Resources
 ******************************/
-free(B);free(T);free(Q);
-free(U); free(Sigma); free(VT);
+free(B);free(X);free(R0);
+free(scal);free(tmp);
 free(V); free(H);free(w);
+free(w);free(nrm); free(relres);
 //free(E);
 free(tau);
-//free(scal);
-//free(S);
-//BLAS_usds(A);
 exit(EXIT_SUCCESS);
 
 } //End of main program 
+
 /****************************************
 *Functions 
 ***************************************/
@@ -581,7 +541,7 @@ void scalvec(int n, double sa, double *sx, double *sy, int incx)
 
 } 
 
-void GRot(double *dx, double *dy, double* cs, double*sn)
+void GRot(double dx, double dy, double cs, double sn)
 {
   double temp;
 

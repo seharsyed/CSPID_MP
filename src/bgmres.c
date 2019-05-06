@@ -38,6 +38,7 @@ double dot_product(double v[], double u[],  int n);
 void subtract(double xx[], double yy[], double result[], int num);
 void scalvec(int n, double sa, double *sx, double *sy, int incx);
 void GRot(double dx, double dy, double cs, double sn);
+void matrixadd(double xx[], double yy[], double result[], int num);
 
 int main (int argc, char * argv[])
 {
@@ -100,7 +101,7 @@ filename = argv[1];  //Passing on the file
        sym = csr_load_matrix(filename, &A);
   
        if(sym) printf("\n\nMatrix is symmetric\n");
-      else    printf("Matrix is general (non-symmetric)\n");
+       else    printf("Matrix is general (non-symmetric)\n");
   
        // Print Matrix data
    //      printf("CSR matrix data:\n");
@@ -186,14 +187,14 @@ for (k=0;k<rhs; k++){
   for (k=0; k<rhs; k++){
   relres[k] = e[k]/nrm[k];
   }
- print_vector("\n\n Relative Residual Norm =\n ", relres, rhs);
+ //print_vector("\n\n Relative Residual Norm =\n ", relres, rhs);
 
 //Initialtization of vector of tolerance
 for (k =0;k<rhs;k++){
         vtol[k] = tol;
     }
 
- print_vector("\n\n Vector of Tolerance =\n ", vtol, rhs);
+// print_vector("\n\n Vector of Tolerance =\n ", vtol, rhs);
 
 for(k = 0;k<rhs;k++){
     if(relres[k]<vtol[k])
@@ -206,8 +207,8 @@ Orthogonal Space Calculation
 
  m = restart+rhs;
  
- V = (double*)calloc(rows*m, sizeof(double)); //Orthogonal Basis
- H = (double*)calloc(m*rhs, sizeof(double)); //Hessenberg Matrix
+ V = (double*)calloc(m*rows, sizeof(double)); //Orthogonal Basis
+ H = (double*)calloc(m*restart, sizeof(double)); //Hessenberg Matrix
  S = (double*)calloc(restart*rhs, sizeof(double));
 //Resultant Matrix after Multiplication V and S
  C = (double*)calloc(rows*rhs, sizeof(double));
@@ -248,16 +249,15 @@ info = LAPACKE_dorgqr(LAPACK_ROW_MAJOR, rows, rhs, rhs, B, rhs, tau);
     } 
  */
 
-
       //printf("\n\n The transpose of B--V is \n");
 
        // Extracting the Q factor of B//
          for (i =0;i<rows; i++){
            for (j=0;j<rhs;j++){
-             V[i*rhs+j] = B[i*rhs+j];
+             V[j*rows+i] = B[i*rhs+j];
           }  
       }
-     print_matrix(V, rows, rhs);
+     print_matrix(V,m,rows);
      printf("\n\nQR Factorization, extraction of V and R completed successfully\n");
 
 /*****************************
@@ -313,8 +313,14 @@ for (int initer = p;initer<m;initer++){
       }
 */
     cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, p, p, 1.0, V, rows, S, p, 0.0, C, p);  //V(:,1:k_in)*S = C
-      //X = X0+(V*S = C)
-       // cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, p, p, 1.0, C, p, , p, 1.0, X, pd); 
+      //X = X0+(V*S = C)  
+      //num = rows*cols
+
+      // matrixadd(double xx[], double yy[], double result[], int num);
+        matrixadd(X, C, X,rows*rhs);  
+       //R = B-A*X;
+      
+        subtract( 
 
 } //End of outer for loop
 
@@ -322,8 +328,8 @@ for (int initer = p;initer<m;initer++){
 /************
 Debugging
 *************/
-printf("\n\nThe Orthogonal basis V is\n");
-print_matrix(V,m, rows);
+//printf("\n\nThe Orthogonal basis V is\n");
+//print_matrix(V,m, rows);
 
 print_vector("w is\n",w,rows);
  
@@ -487,6 +493,13 @@ void subtract(double xx[], double yy[], double result[], int num) {
         result[ii] = xx[ii]-yy[ii];
     }
 }
+
+void matrixadd(double xx[], double yy[], double result[], int num) {
+     for (int ii = 0; ii < num; ii++) {
+         result[ii] = xx[ii]+yy[ii];
+     }
+ }
+
 
 void get_trans(double *x, double *y, int rows, int cols)
 {

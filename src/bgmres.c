@@ -44,7 +44,7 @@ int main (int argc, char * argv[])
 {
 
 double *B,*X, *R0, *tmp,*tau, *scal, *Q;
-double *H, *V, *w, *C, *S;
+double *R, *H, *V, *w, *C, *S, *tmp1;
 double *nrm, *relres, *vtol, *e;
 double tol, eps; 
 
@@ -125,9 +125,10 @@ p = rhs;
 
 B = calloc(rows*rhs, sizeof(double)); //RHS
 X = calloc(rows*rhs, sizeof(double)); //Solution Array
-R0 = calloc(rows*rhs, sizeof(double));//Residual Array
+R0 = calloc(rows*rhs, sizeof(double)); //Initial Residual Array
 tmp = calloc(rhs*rows, sizeof(double)); //Temporary Array for keeping transpose of Matrices
-
+R = calloc(rows*rhs, sizeof(double)); //Residual Array
+tmp1 =  calloc(rhs*rows, sizeof(double));
 
 nrm = calloc(rhs, sizeof(double)); 
 w = calloc(rows, sizeof(double));  //Allocation of Vector Norm//
@@ -319,11 +320,32 @@ for (int initer = p;initer<m;initer++){
       // matrixadd(double xx[], double yy[], double result[], int num);
         matrixadd(X, C, X,rows*rhs);  
        //R = B-A*X;
+
+       //Assigning transpose of X to tmp so that its columns gets called for multiplication
+
+       get_trans(X, tmp1, rows, rhs);
+       printf("\n\nThe transpose of X is\n\n");
       
-        subtract( 
+      //print_matrix(tmp,rhs, rows);
+        
+//       printf("\n\nThe matrix R before multiplication is\n");
+  //     print_matrix(R, rows, rhs);
+
+        for (i = 0;i<rhs;i++){
+       csr_mvp_sym(&A,&tmp1[i*rows],&R[i*rows]);     
+       }
+   
+   subtract(tmp, R, R, rows*rhs);       
+
+//    get_trans(R,R,rows,rhs); 
+    //printf("\n\nThe matrix R is\n");
+     //print_matrix(R, rows, rhs);
+       //subtract( 
 
 } //End of outer for loop
 
+printf("\n\nThe matrix R is\n");
+print_matrix(R, rhs, rows);
 
 /************
 Debugging
@@ -344,12 +366,16 @@ print_matrix(C, rows, p);
 
 printf("\n\n The final solution is\n");
 print_matrix(X, rows, p);
+
+printf("\n\nThe matrix R is\n");
+print_matrix(R, rows, rhs);
 /******************************
 Free Resources
 ******************************/
 free(B);free(X);free(R0);
 free(scal);free(tmp);
-free(V); free(H);free(w);
+free(V); free(H);free(w); 
+free(R);
 free(w);free(nrm); free(relres);
 //free(E);
 free(tau);

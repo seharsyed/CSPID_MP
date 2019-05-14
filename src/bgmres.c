@@ -35,7 +35,7 @@ void print_vector(char* pre, double *v, unsigned int size);
 double **dmatrix ( int nrl, int nrh, int ncl, int nch );
 void matriscopy (double * destmat, double * srcmat, int rowcount, int columncount);
 double dot_product(double v[], double u[],  int n);
-void subtract(double xx[], double yy[], double result[], int num);
+void matrixsub(double xx[], double yy[], double result[], int num);
 void scalvec(int n, double sa, double *sx, double *sy, int incx);
 void GRot(double dx, double dy, double cs, double sn);
 void matrixadd(double xx[], double yy[], double result[], int num);
@@ -44,7 +44,7 @@ int main (int argc, char * argv[])
 {
 
 double *B,*X, *R0, *tmp,*tau, *scal, *Q;
-double *R, *H, *V, *w, *C, *S, *tmp1;
+double *R,*R1, *H, *V, *w, *C, *S, *tmp1;
 double *nrm, *relres, *vtol, *e;
 double tol, eps; 
 
@@ -129,6 +129,7 @@ R0 = calloc(rows*rhs, sizeof(double)); //Initial Residual Array
 tmp = calloc(rhs*rows, sizeof(double)); //Temporary Array for keeping transpose of Matrices
 R = calloc(rows*rhs, sizeof(double)); //Residual Array
 tmp1 =  calloc(rhs*rows, sizeof(double));
+R1 = calloc(rows*rhs, sizeof(double)); //temporary matrix for saving A*X
 
 nrm = calloc(rhs, sizeof(double)); 
 w = calloc(rows, sizeof(double));  //Allocation of Vector Norm//
@@ -307,45 +308,33 @@ for (int initer = p;initer<m;initer++){
         }
      }  //End of while loop for reading matrix
 
-
-  /*
-     for (i =0; i<pd;i++){   
-      scalvec(pd, Sigma_title[i], &VT[i*pd], &VT1[i*pd], 1);
-      }
-*/
-    cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, p, p, 1.0, V, rows, S, p, 0.0, C, p);  //V(:,1:k_in)*S = C
-      //X = X0+(V*S = C)  
-      //num = rows*cols
-
+      cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, p, p, 1.0, V, rows, S, p, 0.0, C, p);  //V(:,1:k_in)*S = C
+      //X = X0+(V*S = C), num = rows*cols
       // matrixadd(double xx[], double yy[], double result[], int num);
-        matrixadd(X, C, X,rows*rhs);  
-       //R = B-A*X;
+        matrixadd(X, C, X,rows*rhs); 
 
        //Assigning transpose of X to tmp so that its columns gets called for multiplication
-
-       get_trans(X, tmp1, rows, rhs);
-       printf("\n\nThe transpose of X is\n\n");
-      
-      //print_matrix(tmp,rhs, rows);
-        
-//       printf("\n\nThe matrix R before multiplication is\n");
-  //     print_matrix(R, rows, rhs);
-
+        get_trans(X, tmp1, rows, rhs);
+//       printf("\n\nThe transpose of X is\n\n")
         for (i = 0;i<rhs;i++){
-       csr_mvp_sym(&A,&tmp1[i*rows],&R[i*rows]);     
+       csr_mvp_sym(&A,&tmp1[i*rows],&R1[i*rows]);     
        }
-   
-   subtract(tmp, R, R, rows*rhs);       
-
-//    get_trans(R,R,rows,rhs); 
-    //printf("\n\nThe matrix R is\n");
-     //print_matrix(R, rows, rhs);
-       //subtract( 
+      
+      //B - A*X 
+      //tmp is transpose of B
+      //R1 is transpose of A*X      
+    
+     // for (i =0;i<rows*rhs;i++){    
+      R[5] = tmp[5]-R1[5];
+    //  }
+     printf("\n\nSubtraction of 6th element of %e from %e gives %e\n", R1[5], tmp[5],R[5]);
+    
+     //get_trans(R,R,rows,rhs); 
+    // printf("\n\nThe matrix R is\n");
+    // print_matrix(R, rhs, rows);
+    //subtract( 
 
 } //End of outer for loop
-
-printf("\n\nThe matrix R is\n");
-print_matrix(R, rhs, rows);
 
 /************
 Debugging
@@ -364,11 +353,16 @@ print_matrix(S, p, p);
 printf("\n\nV and S gives\n");
 print_matrix(C, rows, p);
 
-printf("\n\n The final solution is\n");
+printf("\n\n X we obtained\n");
 print_matrix(X, rows, p);
 
-printf("\n\nThe matrix R is\n");
+printf("\n\nThe product of A and X is\n");
+ print_matrix(R1, rows, p);
+
+printf("\n\n R after subtraction is\n");
 print_matrix(R, rows, rhs);
+
+
 /******************************
 Free Resources
 ******************************/
@@ -514,7 +508,7 @@ double dot_product(double v[], double u[], int n)
     return result;
 }
 
-void subtract(double xx[], double yy[], double result[], int num) {
+void matrixsub(double xx[], double yy[], double result[], int num) {
     for (int ii = 0; ii < num; ii++) {
         result[ii] = xx[ii]-yy[ii];
     }

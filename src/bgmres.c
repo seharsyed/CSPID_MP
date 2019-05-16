@@ -104,8 +104,8 @@ filename = argv[1];  //Passing on the file
        else    printf("Matrix is general (non-symmetric)\n");
   
        // Print Matrix data
-   //      printf("CSR matrix data:\n");
-   //    csr_print_matrix(&csr);
+       printf("CSR matrix data:\n");
+       csr_print_matrix(&A);
  
         printf("\n\nReading : Successful\n");
 
@@ -114,8 +114,18 @@ filename = argv[1];  //Passing on the file
 ********************************/
 iter = 0;
 rows = A.rows;
-rhs = 10;                   //Change it to get rhs from user
-restart = 10;              //Change it later to get it from user
+printf("\n\n Enter the required no of RHS\n");
+scanf("%d", &rhs);
+printf("\n\nEntered RHS: %d\n",rhs );
+
+//rhs = 10;                   //Change it to get rhs from user
+//restart = 10;              //Change it later to get it from user
+
+printf("\n\n Enter the restart value\n");
+scanf("%d", &restart);
+printf("\n\nEntered RHS: %d\n",restart );
+
+
 eps = 0.1;
 tol = 1e-6;
 p = rhs;
@@ -268,7 +278,7 @@ Block Arnoldi Variant
 
 for (int initer = p;initer<m;initer++){
          k_in = initer - p;
-            csr_mvp_sym2(&A,&V[k_in*rows],w); //Sparse-Matrix Vector Multiplication */ 
+            csr_mvp_oski2(&A,&V[k_in*rows],w); //Sparse-Matrix Vector Multiplication */ 
         /**********************
          Modified Gram-Schmidt 
          **********************/        
@@ -317,17 +327,16 @@ for (int initer = p;initer<m;initer++){
         get_trans(X, tmp1, rows, rhs);
 //       printf("\n\nThe transpose of X is\n\n")
         for (i = 0;i<rhs;i++){
-       csr_mvp_sym(&A,&tmp1[i*rows],&R1[i*rows]);     
+       csr_mvp_oski2(&A,&tmp1[i*rows],&R1[i*rows]);     
        }
       
-      //B - A*X 
-      //tmp is transpose of B
-      //R1 is transpose of A*X      
-    
-     // for (i =0;i<rows*rhs;i++){    
-      R[5] = tmp[5]-R1[5];
-    //  }
-     printf("\n\nSubtraction of 6th element of %e from %e gives %e\n", R1[5], tmp[5],R[5]);
+      //B - A*X     
+    /*
+     for (i =0;i<rows*rhs;i++){    
+    R[i] = B[i]-R1[i];
+      }
+*/
+    // printf("\n\nSubtraction of 6th element of %e from %e gives %e\n", R1[5], tmp[5],R[5]);
     
      //get_trans(R,R,rows,rhs); 
     // printf("\n\nThe matrix R is\n");
@@ -369,7 +378,7 @@ Free Resources
 free(B);free(X);free(R0);
 free(scal);free(tmp);
 free(V); free(H);free(w); 
-free(R);
+free(R); free(R1);
 free(w);free(nrm); free(relres);
 //free(E);
 free(tau);

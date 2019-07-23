@@ -39,6 +39,7 @@ void matrixsub(double xx[], double yy[], double result[], int num);
 void scalvec(int n, double sa, double *sx, double *sy, int incx);
 void GRot(double dx, double dy, double cs, double sn);
 void matrixadd(double xx[], double yy[], double result[], int num);
+void writeMatrixtoFile(int row, int column, double *m);
 
 int main (int argc, char * argv[])
 {
@@ -114,17 +115,21 @@ filename = argv[1];  //Passing on the file
 ********************************/
 iter = 0;
 rows = A.rows;
+
+/*
 printf("\n\n Enter the required no of RHS\n");
 scanf("%d", &rhs);
 printf("\n\nEntered RHS: %d\n",rhs );
+*/
 
-//rhs = 10;                   //Change it to get rhs from user
-//restart = 10;              //Change it later to get it from user
+rhs = 6;                   //Change it to get rhs from user
+restart = 5;              //Change it later to get it from user
 
+/*
 printf("\n\n Enter the restart value\n");
 scanf("%d", &restart);
 printf("\n\nEntered RHS: %d\n",restart );
-
+*/
 
 eps = 0.1;
 tol = 1e-6;
@@ -162,7 +167,7 @@ scal = calloc(rhs*rhs, sizeof(double));  //R factor of QR factorization of R
 
 for(i =0; i<rows;i++){
    for (j = 0; j<rhs; j++){
-               B[i*rhs+j]= randf(0,1);
+               B[i*rhs+j]= randf(-1,1);
     }
 }
 
@@ -312,16 +317,19 @@ for (int initer = p;initer<m;initer++){
 
         while(!feof(fp)){
               for(i=0;i<restart;i++){
-                  for(j=0;j<p;j++){
-                fscanf(fp,"%lf",&S[i*restart+j]);
+                  for(j=0;j<rhs;j++){
+                fscanf(fp,"%lf",&S[i*rhs+j]);
          }
         }
      }  //End of while loop for reading matrix
 
-      cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, p, p, 1.0, V, rows, S, p, 0.0, C, p);  //V(:,1:k_in)*S = C
+      cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, rhs, restart, 1.0, V, rows, S, rhs, 0.0, C, rhs);  //V(:,1:k_in)*S = C
       //X = X0+(V*S = C), num = rows*cols
       // matrixadd(double xx[], double yy[], double result[], int num);
-        matrixadd(X, C, X,rows*rhs); 
+
+       matrixadd(X, C, X,rows*rhs); 
+       printf("\n\n X we obtained\n");
+       print_matrix(X, rows, rhs);
 
        //Assigning transpose of X to tmp so that its columns gets called for multiplication
         get_trans(X, tmp1, rows, rhs);
@@ -357,10 +365,10 @@ printf("\n\nThe Hessenberg Matrix is\n\n");
 print_matrix(H,m, restart);
 
 printf("\n\nThe matrix S is\n");
-print_matrix(S, p, p);
+print_matrix(S, restart, rhs);
 
 printf("\n\nV and S gives\n");
-print_matrix(C, rows, p);
+print_matrix(C, rows, rhs);
 
 printf("\n\n X we obtained\n");
 print_matrix(X, rows, p);
@@ -601,4 +609,21 @@ void GRot(double dx, double dy, double cs, double sn)
     cs = 1.0 / sqrt( 1.0 + temp*temp );
     sn = temp * cs;
   }
+}
+
+void writeMatrixtoFile(int row, int column, double *m)
+{
+    FILE *matrix=fopen("matrix.txt", "w");
+    int a=0, b=0;
+ 
+    for(a=0;a<row;a++)     
+    {
+        for(b=0;b<column;b++)  
+        {              
+            fprintf(matrix, "%lf\t", m[a*column+b]);
+        }
+        fprintf(matrix, "\n");
+    } 
+ 
+    fclose(matrix);
 }

@@ -3,7 +3,7 @@ Testing Block GMRES Method with Deflation
 
 Author: Sehar Naveed
         sehar.naveed@stud-inf.unibz.it
-        January 2019
+        July 2019
 
 Supervisor: Dr. Bruno Carpentieri
             Dr. Flavio Vella

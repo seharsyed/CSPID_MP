@@ -167,7 +167,7 @@ scal = calloc(rhs*rhs, sizeof(double));  //R factor of QR factorization of R
 
 for(i =0; i<rows;i++){
    for (j = 0; j<rhs; j++){
-               B[i*rhs+j]= randf(-1,1);
+               B[i*rhs+j]= randf(0,1);
     }
 }
 
@@ -296,7 +296,7 @@ for (int initer = p;initer<m;initer++){
            H[initer*restart+k_in] = vecnorm(rows,w, w);
            cblas_dscal(rows, 1.0/H[initer*restart+k_in],w, 1);
            cblas_dcopy(rows, w, 1, &V[initer*rows], 1); 
-  
+}  
        /**************
        End of Arnoldi
        ***************/
@@ -325,14 +325,14 @@ for (int initer = p;initer<m;initer++){
 
       cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, rows, rhs, restart, 1.0, V, rows, S, rhs, 0.0, C, rhs);  //V(:,1:k_in)*S = C
       //X = X0+(V*S = C), num = rows*cols
-      // matrixadd(double xx[], double yy[], double result[], int num);
+//       matrixadd(double xx[], double yy[], double result[], int num);
 
-       matrixadd(X, C, X,rows*rhs); 
-       printf("\n\n X we obtained\n");
-       print_matrix(X, rows, rhs);
+      matrixadd(X, C, X,rows*rhs); 
+//       printf("\n\n X we obtained\n");
+  //     print_matrix(X, rows, rhs);
 
        //Assigning transpose of X to tmp so that its columns gets called for multiplication
-        get_trans(X, tmp1, rows, rhs);
+    get_trans(X, tmp1, rows, rhs);
 //       printf("\n\nThe transpose of X is\n\n")
         for (i = 0;i<rhs;i++){
        csr_mvp_oski2(&A,&tmp1[i*rows],&R1[i*rows]);     
@@ -351,7 +351,7 @@ for (int initer = p;initer<m;initer++){
     // print_matrix(R, rhs, rows);
     //subtract( 
 
-} //End of outer for loop
+// } //End of outer for loop
 
 /************
 Debugging

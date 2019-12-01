@@ -69,3 +69,21 @@ flag during linking and do at least one of the following:
 See any operating system documentation about shared libraries for
 more information, such as the ld(1) and ld.so(8) manual pages.
 
+ There are five documents within the DOCUMENT subdirectory.
+  In summary,
+  
+    ex-nonsym.doc, ex-sym.doc  and ex-complex.doc
+     -------------  ----------      --------------
+    Example Templates of how to invoke the different computational
+    modes offered by [D,S]NAUPD, [D,S]SAUPD and [C,Z]NAUPD.
+  
+    stat.doc
+    --------
+    File that gets timing statistics for the different parts
+    of the Arnoldi update iteration codes within ARPACK.
+  
+    debug.doc
+    ---------
+    File that explains the different printing options of the
+    Arnoldi update iteration codes within ARPACK.
+

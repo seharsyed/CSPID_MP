@@ -1,0 +1,8 @@
+tasks to do
+1. Update Hessenberg
+2. Rerun the codes 
+3. Make files of rotation 
+4. Backward substitution 
+5. Eigen Value Capture 
+6. Spectral Preconditioning 
+7. ilu factorization attachment

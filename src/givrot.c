@@ -11,7 +11,7 @@
 
 
 void GeneratePlaneRotation(double dx, double dy, double cs, double sn);
-void ApplyPlaneRotation(double dx, double dy, double cs, double sn);
+//void ApplyPlaneRotation(double dx, double dy, double cs, double sn);
 
 int main ()
 {
@@ -29,6 +29,7 @@ int restart;
 int i;
 int j;
 int k;
+double temp;
 
     printf("Enter number of Rows :");
     scanf("%d",&m);
@@ -72,16 +73,23 @@ printf("\nEnter matrix elements :\n");
 
 //Starting the rotation here! 
 for (i = 0; i < m; i++){   
-        for (j = 0;j<i; j++){	
+        for (k = 0;k<i; k++){	
+  
+	      	temp = cs[k]*h[k*restart+i]+sn[k]*h[(k+1)*restart+i];
+   h[(k+1)*restart+i]= -sn[k]*h[k*restart+i]+cs[k]*h[(k+1)*restart+i];
+   h[k*restart+i]= temp;
+	}
     
-      ApplyPlaneRotation(h[j*restart+i], h[(j+1)*restart+i], cs[j], sn[j]);
+ 
+	    
+	//	ApplyPlaneRotation(h[j*restart+i], h[(j+1)*restart+i], cs[j], sn[j]);
       
-      GeneratePlaneRotation(h[i*restart+j], h[(i+1)*restart+i], cs[i], sn[i]);
-       ApplyPlaneRotation(h[i*restart+i], h[(i+1)*restart+i],cs[i], sn[i]);
-       ApplyPlaneRotation(g[i], g[i+1], cs[i], sn[i]);
+       GeneratePlaneRotation(h[i*restart+i], h[(i+1)*restart+i], cs[i], sn[i]);
+      // ApplyPlaneRotation(h[i*restart+i], h[(i+1)*restart+i],cs[i], sn[i]);
+    //   ApplyPlaneRotation(g[i], g[i+1], cs[i], sn[i]);
       
-       }
-}
+   }//End of outer loop 
+
 
 
 

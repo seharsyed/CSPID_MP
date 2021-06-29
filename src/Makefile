@@ -34,7 +34,7 @@ CBLAS = -lcblas
 LIBES = -lm
 LAPACK = -llapack
 LAPACKE = -llapacke
-SPBLAS = /home/academic/snaveed/CSPID/spblas_0_8/libsparseblas.a 
+#SPBLAS = /home/academic/snaveed/CSPID/spblas_0_8/libsparseblas.a 
 #----------------------------------------------------------------------------
 #Include files (Header files)
 #----------------------------------------------------------------------------

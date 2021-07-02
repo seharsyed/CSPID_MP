@@ -9,7 +9,8 @@
 
 
 
-
+void print_vector(char* pre, double *v, unsigned int size);
+void print_matrix(double *arr, int rows, int cols);
 void GeneratePlaneRotation(double dx, double dy, double cs, double sn);
 //void ApplyPlaneRotation(double dx, double dy, double cs, double sn);
 
@@ -21,6 +22,7 @@ double *sn;
 double *h;
 double *y; // starting as a vector and will implement it later for matrix
 double *g;
+double *e;
 
 int m; //maximum no of inner iterations, mr < size of matrix 
 //mr = m,
@@ -38,10 +40,12 @@ double temp;
 
 cs = ( double * ) malloc ( m * sizeof ( double ) );
 sn = ( double * ) malloc ( m * sizeof ( double ) );
-g = ( double * ) malloc ( ( m + 1 ) * sizeof ( double ) );
+g = ( double * ) malloc ( ( m + 1 ) * sizeof ( double ) );  //rotation matrix
 h = (double * ) malloc ((m*restart)* sizeof (double));
+e = (double *) malloc (m*m*sizeof(double)); //Identity matrix
 
-printf("\nEnter matrix elements :\n");
+//Declaration of matrix from user 
+   printf("\nEnter matrix elements :\n");
     for(i=0;i< m;i++)
     {
         for(j=0;j< restart;j++)
@@ -51,25 +55,25 @@ printf("\nEnter matrix elements :\n");
         }
     }
 
- printf("\nMatrix is :\n");
-    for(i=0;i< m;i++)
-    {
-        for(j=0;j< restart;j++)
+//Print the entered matrix
+printf("\nThe entered matrix is: \n");
+print_matrix(h,m, restart);
 
 
-        {
-            printf("%e\t",h[i*restart+j]);
-        }
-        printf("\n");   /*new line after row elements*/
+
+    //Declaration of rotation matrix I am starting with identity and then discover the real 
+
+
+
+//declaration of identity matrix 
+    for (k = 0; k < m; k++){
+    e[k*m+k] = 1.0;
     }
 
-//Declaration of rotation matrix I am starting with identity and then discover the real 
+//Reading the identity matrix
+printf("\n\nThe matrix of identity is: \n\n");
+print_matrix(e,m,m);
 
-
-
-
-    for (k = 0; k < m; k++)
-    g[k*restart+k] = 1.0;
 
 //Starting the rotation here! 
 for (i = 0; i < m; i++){   
@@ -89,48 +93,38 @@ for (i = 0; i < m; i++){
     //   ApplyPlaneRotation(g[i], g[i+1], cs[i], sn[i]);
       
    }//End of outer loop 
-//adding comment to check contributions
 
 
+//****************************
+//Printing values for DEBUGGING
+//***************************//
 
 printf("\n\n\nMatrix after Rotation is :\n");
-    for(i=0;i< m;i++)
-    {
-        for(j=0;j< restart;j++)
+print_matrix(h,m,restart);
+
+print_vector("\n\nC vector is\n\n",cs,m);
+
+print_vector("\n\nS vector is\n\n",sn,m);
 
 
-        {
-            printf("%e\t",h[i*restart+j]);
-        }
-        printf("\n");   /*new line after row elements*/
-    }
-
-
-printf("\n\n\nMatrix g after Rotation is :\n");
-    for(i=0;i< m;i++)
-    {
-        for(j=0;j< restart;j++)
-
-
-        {
-            printf("%e\t",g[i*restart+j]);
-        }
-        printf("\n");   /*new line after row elements*/
-    }
 
 
 
 
 }// End of main function 
 
-//template<class Real>
+
+//______________________________________________________________________________________
+//User Defined Functions
+//______________________________________________________________________________________
+
 void GeneratePlaneRotation(double dx, double dy, double cs, double sn)
 {
   double temp;	
   if (dy == 0.0) {
     cs = 1.0;
     sn = 0.0;
-  } else if (abs(dy) > abs(dx)) {
+  } else if (fabs(dy) > fabs(dx)) {
     temp = dx / dy;
     sn = 1.0 / sqrt( 1.0 + temp*temp );
     cs = temp * sn;
@@ -152,3 +146,22 @@ void ApplyPlaneRotation(double dx, double dy, double cs, double sn)
 	 dx = temp;
 }
 
+void print_vector(char* pre, double *v, unsigned int size){
+        unsigned int i;
+       printf("%s", pre);
+         for(i = 0; i < size; i++){
+//          printf("%.3f\t ", v[i]);
+          printf("%e \t", v[i]);
+      }
+      printf("\t");
+  }
+
+void print_matrix(double *arr, int rows, int cols){
+
+     for(int i = 0; i <rows; i++){
+         for (int j=0;j<cols; j++){
+                printf("\t%e\t",arr[i*cols+j]);
+
+        }
+       printf("\n");
+     } }

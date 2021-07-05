@@ -1,5 +1,8 @@
-//This is the file made ito test the implementation of givens rotation on a small hessenberg matrix
+//This is the file made ito test the ementation of givens rotation on a small hessenberg matrix
 //I will read a small H matrix then apply the givens rotation on it. Check the same result on Matlab. 
+//This ROT1.C is implementation of C code into givens 
+//
+//
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,7 +45,8 @@ double temp;
 
 cs = ( double * ) malloc ( m * sizeof ( double ) );
 sn = ( double * ) malloc ( m * sizeof ( double ) );
-g = ( double * ) malloc ( ( m + 1 ) * sizeof ( double ) );  //rotation matrix
+g = ( double * ) malloc ( ( m + 1 ) * sizeof ( double ) );//rotation matrix
+y = ( double * ) malloc ( ( m + 1 ) * sizeof ( double ) );
 h = (double * ) malloc ((m*restart)* sizeof (double));
 e = (double *) malloc (m*m*sizeof(double)); //Identity matrix
 
@@ -67,7 +71,9 @@ print_matrix(h,m, restart);
 
 
 
-//declaration of identity matrix     for (k = 0; k < m; k++){
+//declaration of identity matrix 
+
+   for (k = 0; k < m; k++){
     e[k*m+k] = 1.0;
     }
 
@@ -76,23 +82,33 @@ printf("\n\nThe matrix of identity is: \n\n");
 print_matrix(e,m,m);
 
 
-//Starting the rotation here! 
-for (i = 0; i < m; i++){   
-        for (k = 0;k<i; k++){	
-  
-	      	temp = cs[k]*h[k*restart+i]+sn[k]*h[(k+1)*restart+i];
-   h[(k+1)*restart+i]= -sn[k]*h[k*restart+i]+cs[k]*h[(k+1)*restart+i];
-   h[k*restart+i]= temp;
-	}
-    
- 
-	    
-	//	ApplyPlaneRotation(h[j*restart+i], h[(j+1)*restart+i], cs[j], sn[j]);
-      
-       GeneratePlaneRotation(h[i*restart+i], h[(i+1)*restart+i], cs[i], sn[i]);
-      // ApplyPlaneRotation(h[i*restart+i], h[(i+1)*restart+i],cs[i], sn[i]);
-    //   ApplyPlaneRotation(g[i], g[i+1], cs[i], sn[i]);
-      
+//Starting the rotation here 
+for (k = 0;k<m;k++){
+
+   if ( 0 < k )
+      {
+        for ( i = 0; i < k + 2; i++ )
+        {
+          y[i] = h[i*restart+k];
+        }
+        for ( j = 0; j < k; j++ ) 
+        {
+          mult_givens ( cs[j], sn[j], j, y );
+        }
+        for ( i = 0; i < k + 2; i++ ) 
+        {
+          h[i*restart+k] = y[i];
+        }
+      }
+
+      temp = sqrt ( h[k*restart+k] * h[k*restart+k] + h[(k+1)*restart+k] * h[(k+1)*restart+k] );
+      cs[k] = h[k*restart+k] / temp;
+      sn[k] = -h[(k+1)*restart+k] / temp;
+      h[k*restart+k] = cs[k] * h[k*restart+k] - sn[k] * h[(k+1)*restart+k];
+      h[(k+1)*restart+k] = 0.0;
+      mult_givens ( cs[k], sn[k], k, g );
+
+
    }//End of outer loop 
 
 

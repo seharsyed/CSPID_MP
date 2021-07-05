@@ -1,6 +1,8 @@
 //This is the file made ito test the implementation of givens rotation on a small hessenberg matrix
 //I will read a small H matrix then apply the givens rotation on it. Check the same result on Matlab. 
-
+//giv1.c is file with MATLAB coding base as givens rotation. 
+//
+//
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -11,7 +13,7 @@
 
 void print_vector(char* pre, double *v, unsigned int size);
 void print_matrix(double *arr, int rows, int cols);
-void GeneratePlaneRotation(double dx, double dy, double cs, double sn);
+void rotmat(double dx, double dy, double cs, double sn);
 void mult_givens(double cs, double sn, int k, double *g);
 
 //void ApplyPlaneRotation(double dx, double dy, double cs, double sn);
@@ -62,12 +64,12 @@ printf("\nThe entered matrix is: \n");
 print_matrix(h,m, restart);
 
 
-
     //Declaration of rotation matrix I am starting with identity and then discover the real 
 
 
 
-//declaration of identity matrix     for (k = 0; k < m; k++){
+//declaration of identity matrix  
+   for (k = 0; k < m; k++){
     e[k*m+k] = 1.0;
     }
 
@@ -79,21 +81,29 @@ print_matrix(e,m,m);
 //Starting the rotation here! 
 for (i = 0; i < m; i++){   
         for (k = 0;k<i; k++){	
-  
+
 	      	temp = cs[k]*h[k*restart+i]+sn[k]*h[(k+1)*restart+i];
    h[(k+1)*restart+i]= -sn[k]*h[k*restart+i]+cs[k]*h[(k+1)*restart+i];
    h[k*restart+i]= temp;
 	}
     
- 
-	    
-	//	ApplyPlaneRotation(h[j*restart+i], h[(j+1)*restart+i], cs[j], sn[j]);
-      
-       GeneratePlaneRotation(h[i*restart+i], h[(i+1)*restart+i], cs[i], sn[i]);
-      // ApplyPlaneRotation(h[i*restart+i], h[(i+1)*restart+i],cs[i], sn[i]);
-    //   ApplyPlaneRotation(g[i], g[i+1], cs[i], sn[i]);
-      
-   }//End of outer loop 
+          rotmat(h[i*restart+i], h[(i+1)*restart+i], cs[i], sn[i]);
+          
+	 temp   = cs[i]*e[i];                       // approximate residual norm
+         e[i+1] = -sn[i]*e[i];
+	 e[i]   = temp;
+         h[i*restart+i]= cs[i]*h[i*restart+i]+ sn[i]*h[(i+1)*restart+i];
+          h[(i+1)*restart+i] = 0.0;
+
+	 /*******************************
+	 TO DO:
+	 Error in 1st entry of the last row.
+	 Need to check the indexes, 
+	 Values not matching with MATLAB 
+         ********************************/
+
+
+}//End of outer loop 
 
 
 //****************************
@@ -119,7 +129,7 @@ print_vector("\n\nS vector is\n\n",sn,m);
 //User Defined Functions
 //______________________________________________________________________________________
 
-void GeneratePlaneRotation(double dx, double dy, double cs, double sn)
+void rotmat (double dx, double dy, double cs, double sn)
 {
   double temp;	
   if (dy == 0.0) {

@@ -1,6 +1,6 @@
 //This is the file made ito test the implementation of givens rotation on a small hessenberg matrix
 //I will read a small H matrix then apply the givens rotation on it. Check the same result on Matlab. 
-//giv1.c is file with MATLAB coding base as givens rotation. 
+//rot1m.c is file with MATLAB coding base as givens rotation. 
 //
 //
 #include <stdio.h>

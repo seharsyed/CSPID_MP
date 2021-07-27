@@ -79,8 +79,8 @@ print_matrix(e,m,m);
 
 
 //Starting the rotation here! 
-for (i = 0; i < m; i++){   
-        for (k = 0;k<i; k++){	
+for (i = 0; i < m+1; i++){   
+        for (k = 0;k<i-1; k++){	
 
 	      	temp = cs[k]*h[k*restart+i]+sn[k]*h[(k+1)*restart+i];
    h[(k+1)*restart+i]= -sn[k]*h[k*restart+i]+cs[k]*h[(k+1)*restart+i];

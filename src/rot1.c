@@ -37,6 +37,8 @@ int i;
 int j;
 int k;
 double temp;
+double h1;
+double h2;
 
     printf("Enter number of Rows :");
     scanf("%d",&m);
@@ -83,6 +85,11 @@ print_matrix(e,m,m);
 
 
 //Starting the rotation here 
+/*********************************************************************************
+//This routine is working but somehow picking up the wrong values in second row
+//One way is to double check and print the values that it picks at each step
+**********************************************************************/
+
 for (k = 0;k<m;k++){
 
    if ( 0 < k )
@@ -102,13 +109,36 @@ for (k = 0;k<m;k++){
       }
 
       temp = sqrt ( h[k*restart+k] * h[k*restart+k] + h[(k+1)*restart+k] * h[(k+1)*restart+k] );
+      h1 = h[k*restart+k];
+      h2 = h[(k+1)*restart+k];
+
+      printf("\n\nvalue of temp/r at loop %d is %f\n",k+1, temp);
+
+      printf("\n\nvalue of x at loop %d is %f\n", k+1,h1);
+       printf("\n\nvalue of y at loop %d is %f\n", k+1,h2);
+
+
       cs[k] = h[k*restart+k] / temp;
+      printf("\n\nvalue of c at loop %d is %f\n", k+1,cs[k]);
+      
       sn[k] = -h[(k+1)*restart+k] / temp;
+      printf("\n\nvalue of s at loop %d is %f\n", k+1,sn[k]);
+
+
+      printf("\n\n\nMatrix after applying  Rotation at loop  %d is :\n", k+1);
+      print_matrix(h,m,restart);
+  
       h[k*restart+k] = cs[k] * h[k*restart+k] - sn[k] * h[(k+1)*restart+k];
       h[(k+1)*restart+k] = 0.0;
-      mult_givens ( cs[k], sn[k], k, g );
+      mult_givens ( cs[k], sn[k], k, e );
 
+      printf("\n\n\nMatrix after update at last step is :\n");
+      print_matrix(h,m,restart);
 
+       printf("\n****************************************\n");
+      printf("\nEnd of loop\n");
+      printf("\n****************************************\n");
+      
    }//End of outer loop 
 
 

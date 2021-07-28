@@ -90,27 +90,27 @@ print_matrix(e,m,m);
 //One way is to double check and print the values that it picks at each step
 **********************************************************************/
 
-for (k = 0;k<m;k++){
-
-   if ( 0 < k )
-      {
-        for ( i = 0; i < k + 2; i++ )
-        {
-          y[i] = h[i*restart+k];
-        }
-        for ( j = 0; j < k; j++ ) 
-        {
-          mult_givens ( cs[j], sn[j], j, y );
-        }
-        for ( i = 0; i < k + 2; i++ ) 
-        {
-          h[i*restart+k] = y[i];
-        }
-      }
-
+//for (k = 0;k<m;k++){
+//
+//   if ( 0 < k )
+ //     {
+ //       for ( i = 0; i < k + 2; i++ )
+  //      {
+   //       y[i] = h[i*restart+k];
+     //   }
+     //   for ( j = 0; j < k; j++ ) 
+      //  {
+       //   mult_givens ( cs[j], sn[j], j, y );
+      //  }
+      ////  for ( i = 0; i < k + 2; i++ ) 
+       // {
+        //  h[i*restart+k] = y[i];
+       // }
+     // }
+k = 0;
       temp = sqrt ( h[k*restart+k] * h[k*restart+k] + h[(k+1)*restart+k] * h[(k+1)*restart+k] );
-      h1 = h[k*restart+k];
-      h2 = h[(k+1)*restart+k];
+     h1 = h[k*restart+k];
+     h2 = h[(k+1)*restart+k];
 
       printf("\n\nvalue of temp/r at loop %d is %f\n",k+1, temp);
 
@@ -125,12 +125,13 @@ for (k = 0;k<m;k++){
       printf("\n\nvalue of s at loop %d is %f\n", k+1,sn[k]);
 
 
-      printf("\n\n\nMatrix after applying  Rotation at loop  %d is :\n", k+1);
-      print_matrix(h,m,restart);
+  //    printf("\n\n\nMatrix after applying  Rotation at loop  %d is :\n", k+1);
+    //  print_matrix(h,m,restart);
   
       h[k*restart+k] = cs[k] * h[k*restart+k] - sn[k] * h[(k+1)*restart+k];
+//updated value of h[k*restart+k]
       h[(k+1)*restart+k] = 0.0;
-      mult_givens ( cs[k], sn[k], k, e );
+//      mult_givens ( cs[k], sn[k], k, e );       this e should be the givens matrix 
 
       printf("\n\n\nMatrix after update at last step is :\n");
       print_matrix(h,m,restart);
@@ -139,7 +140,7 @@ for (k = 0;k<m;k++){
       printf("\nEnd of loop\n");
       printf("\n****************************************\n");
       
-   }//End of outer loop 
+ //  }////End of outer loop 
 
 
 //****************************

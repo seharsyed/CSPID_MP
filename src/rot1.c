@@ -107,7 +107,7 @@ print_matrix(e,m,m);
         //  h[i*restart+k] = y[i];
        // }
      // }
-k = 0;
+k = 1;
       temp = sqrt ( h[k*restart+k] * h[k*restart+k] + h[(k+1)*restart+k] * h[(k+1)*restart+k] );
      h1 = h[k*restart+k];
      h2 = h[(k+1)*restart+k];
@@ -129,7 +129,7 @@ k = 0;
     //  print_matrix(h,m,restart);
   
       h[k*restart+k] = cs[k] * h[k*restart+k] - sn[k] * h[(k+1)*restart+k];
-//updated value of h[k*restart+k]
+//updted value of h[k*restart+k]
       h[(k+1)*restart+k] = 0.0;
 //      mult_givens ( cs[k], sn[k], k, e );       this e should be the givens matrix 
 

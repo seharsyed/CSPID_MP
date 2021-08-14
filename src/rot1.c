@@ -47,10 +47,10 @@ double h2;
 
 cs = ( double * ) malloc ( m * sizeof ( double ) );
 sn = ( double * ) malloc ( m * sizeof ( double ) );
-g = ( double * ) malloc ( ( m + 1 ) * sizeof ( double ) );//rotation matrix
+//g = ( double * ) malloc ( ( m + 1 ) * sizeof ( double ) );//rotation matrix
 y = ( double * ) malloc ( ( m + 1 ) * sizeof ( double ) );
 h = (double * ) malloc ((m*restart)* sizeof (double));
-e = (double *) malloc (m*m*sizeof(double)); //Identity matrix
+g = (double *) malloc (m*m*sizeof(double)); //Identity matrix
 
 //Declaration of matrix from user 
    printf("\nEnter matrix elements :\n");
@@ -76,12 +76,12 @@ print_matrix(h,m, restart);
 //declaration of identity matrix 
 
    for (k = 0; k < m; k++){
-    e[k*m+k] = 1.0;
+    g[k*m+k] = 1.0;
     }
 
 //Reading the identity matrix
 printf("\n\nThe matrix of identity is: \n\n");
-print_matrix(e,m,m);
+print_matrix(g,m,m);
 
 
 //Starting the rotation here 
@@ -89,25 +89,33 @@ print_matrix(e,m,m);
 //This routine is working but somehow picking up the wrong values in second row
 //One way is to double check and print the values that it picks at each step
 **********************************************************************/
+for (k =0;k<m;k++){
 
 //for (k = 0;k<m;k++){
-//
-//   if ( 0 < k )
- //     {
- //       for ( i = 0; i < k + 2; i++ )
-  //      {
-   //       y[i] = h[i*restart+k];
-     //   }
-     //   for ( j = 0; j < k; j++ ) 
-      //  {
-       //   mult_givens ( cs[j], sn[j], j, y );
-      //  }
-      ////  for ( i = 0; i < k + 2; i++ ) 
-       // {
-        //  h[i*restart+k] = y[i];
-       // }
-     // }
-k = 1;
+
+ if ( 0 < k )
+      {
+        for ( i = 0; i < k + 2; i++ )
+       { 
+         y[i] = h[i*restart+k];
+        }
+printf("\n\n**** I am assigning values of h to y*****\n\n");
+print_vector("\n\n vector Y is\n\n",y ,m);
+    
+       for ( j = 0; j < k; j++ ) 
+       {
+          mult_givens ( cs[j], sn[j], j, y );
+       }
+
+ printf("\n\n**** Checking the multiplcation of multiple givens routine\n\n");
+ print_vector("\n\n vector Y after multiplication is\n\n",y ,m);
+
+
+         for ( i = 0; i < k + 2; i++ ) 
+       {
+          h[i*restart+k] = y[i];
+       }
+     }
       temp = sqrt ( h[k*restart+k] * h[k*restart+k] + h[(k+1)*restart+k] * h[(k+1)*restart+k] );
      h1 = h[k*restart+k];
      h2 = h[(k+1)*restart+k];
@@ -131,16 +139,16 @@ k = 1;
       h[k*restart+k] = cs[k] * h[k*restart+k] - sn[k] * h[(k+1)*restart+k];
 //updted value of h[k*restart+k]
       h[(k+1)*restart+k] = 0.0;
-//      mult_givens ( cs[k], sn[k], k, e );       this e should be the givens matrix 
+      mult_givens ( cs[k], sn[k], k, g);      // this e should be the givens matrix 
 
-      printf("\n\n\nMatrix after update at last step is :\n");
-      print_matrix(h,m,restart);
+      //printf("\n\n\nMatrix after update at last step is :\n");
+    //  print_matrix(h,m,restart);
 
        printf("\n****************************************\n");
       printf("\nEnd of loop\n");
       printf("\n****************************************\n");
       
- //  }////End of outer loop 
+   }////End of outer loop 
 
 
 //****************************
@@ -155,10 +163,8 @@ print_vector("\n\nC vector is\n\n",cs,m);
 print_vector("\n\nS vector is\n\n",sn,m);
 
 
-
-
-
-
+printf("\n\n\n Givens Matrix is :\n");
+print_matrix(g,m,m);
 }// End of main function 
 
 
@@ -202,7 +208,7 @@ void mult_givens(double cs, double sn, int k, double *g)
          g2  =  sn * g[k]+ cs * g[k+1];
           
 	 g[k]=g1;
-	 g[k+2]= g2;
+	 g[k+1]= g2;
 	 return;
 }
 

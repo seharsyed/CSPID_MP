@@ -1,3 +1,11 @@
+//This file contains the routines of addition of matrices
+
+/*************************************************************
+TO DO I need to add all these routines to a single header file
+*************************************************************/
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

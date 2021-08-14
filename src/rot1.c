@@ -116,7 +116,14 @@ print_vector("\n\n vector Y is\n\n",y ,m);
           h[i*restart+k] = y[i];
        }
      }
-      temp = sqrt ( h[k*restart+k] * h[k*restart+k] + h[(k+1)*restart+k] * h[(k+1)*restart+k] );
+
+/**********************************************************************
+ TO DO:1 Replace the following line of codes with routine
+       2 Understand the working of givens matrix in updating the results
+       3 Implement backward substitution 
+************************************************************************/
+
+     temp = sqrt ( h[k*restart+k] * h[k*restart+k] + h[(k+1)*restart+k] * h[(k+1)*restart+k] );
      h1 = h[k*restart+k];
      h2 = h[(k+1)*restart+k];
 

@@ -1,5 +1,8 @@
-//This is the file made ito test the implementation of givens rotation on a small hessenberg matrix
-//I will read a small H matrix then apply the givens rotation on it. Check the same result on Matlab. 
+//Copy of ROT1.C
+//trying to convert the lines of code to subroutine
+//need to experiment on multiple files and keep on adding the backward substitution
+//
+//
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,6 +37,8 @@ int i;
 int j;
 int k;
 double temp;
+double h1;
+double h2;
 
     printf("Enter number of Rows :");
     scanf("%d",&m);
@@ -42,9 +47,10 @@ double temp;
 
 cs = ( double * ) malloc ( m * sizeof ( double ) );
 sn = ( double * ) malloc ( m * sizeof ( double ) );
-g = ( double * ) malloc ( ( m + 1 ) * sizeof ( double ) );  //rotation matrix
+//g = ( double * ) malloc ( ( m + 1 ) * sizeof ( double ) );//rotation matrix
+y = ( double * ) malloc ( ( m + 1 ) * sizeof ( double ) );
 h = (double * ) malloc ((m*restart)* sizeof (double));
-e = (double *) malloc (m*m*sizeof(double)); //Identity matrix
+g = (double *) malloc (m*m*sizeof(double)); //Identity matrix
 
 //Declaration of matrix from user 
    printf("\nEnter matrix elements :\n");
@@ -67,33 +73,85 @@ print_matrix(h,m, restart);
 
 
 
-//declaration of identity matrix     for (k = 0; k < m; k++){
-    e[k*m+k] = 1.0;
+//declaration of identity matrix 
+
+   for (k = 0; k < m; k++){
+    g[k*m+k] = 1.0;
     }
 
 //Reading the identity matrix
 printf("\n\nThe matrix of identity is: \n\n");
-print_matrix(e,m,m);
+print_matrix(g,m,m);
 
 
-//Starting the rotation here! 
-for (i = 0; i < m; i++){   
-        for (k = 0;k<i; k++){	
-  
-	      	temp = cs[k]*h[k*restart+i]+sn[k]*h[(k+1)*restart+i];
-   h[(k+1)*restart+i]= -sn[k]*h[k*restart+i]+cs[k]*h[(k+1)*restart+i];
-   h[k*restart+i]= temp;
-	}
+//Starting the rotation here 
+/*********************************************************************************
+//This routine is working but need to understand the role of g 
+**********************************************************************/
+for (k =0;k<m;k++){
+
+//for (k = 0;k<m;k++){
+
+ if ( 0 < k )
+      {
+        for ( i = 0; i < k + 2; i++ )
+       { 
+         y[i] = h[i*restart+k];
+        }
+printf("\n\n**** I am assigning values of h to y*****\n\n");
+print_vector("\n\n vector Y is\n\n",y ,m);
     
- 
-	    
-	//	ApplyPlaneRotation(h[j*restart+i], h[(j+1)*restart+i], cs[j], sn[j]);
+       for ( j = 0; j < k; j++ ) 
+       {
+          mult_givens ( cs[j], sn[j], j, y );
+       }
+
+ printf("\n\n**** Checking the multiplcation of multiple givens routine\n\n");
+ print_vector("\n\n vector Y after multiplication is\n\n",y ,m);
+
+
+         for ( i = 0; i < k + 2; i++ ) 
+       {
+          h[i*restart+k] = y[i];
+       }
+     }
+
+/**********************************************************************
+ TO DO:1 Replace the following line of codes with routine
+       2 Understand the working of givens matrix in updating the results
+       3 Implement backward substitution 
+************************************************************************/
+
+     temp = sqrt ( h[k*restart+k] * h[k*restart+k] + h[(k+1)*restart+k] * h[(k+1)*restart+k] );
+     h1 = h[k*restart+k];
+     h2 = h[(k+1)*restart+k];
+
+      printf("\n\nvalue of temp/r at loop %d is %f\n",k+1, temp);
+
+      printf("\n\nvalue of x at loop %d is %f\n", k+1,h1);
+       printf("\n\nvalue of y at loop %d is %f\n", k+1,h2);
+
+
+      cs[k] = h[k*restart+k] / temp;
+      printf("\n\nvalue of c at loop %d is %f\n", k+1,cs[k]);
       
-       GeneratePlaneRotation(h[i*restart+i], h[(i+1)*restart+i], cs[i], sn[i]);
-      // ApplyPlaneRotation(h[i*restart+i], h[(i+1)*restart+i],cs[i], sn[i]);
-    //   ApplyPlaneRotation(g[i], g[i+1], cs[i], sn[i]);
+      sn[k] = -h[(k+1)*restart+k] / temp;
+      printf("\n\nvalue of s at loop %d is %f\n", k+1,sn[k]);
+
+
+  //    printf("\n\n\nMatrix after applying  Rotation at loop  %d is :\n", k+1);
+    //  print_matrix(h,m,restart);
+  
+      h[k*restart+k] = cs[k] * h[k*restart+k] - sn[k] * h[(k+1)*restart+k];
+//updted value of h[k*restart+k]
+      h[(k+1)*restart+k] = 0.0;
+      mult_givens ( cs[k], sn[k], k, g);      // this should be the givens matrix 
+
+       printf("\n****************************************\n");
+      printf("\nEnd of loop\n");
+      printf("\n****************************************\n");
       
-   }//End of outer loop 
+   }////End of outer loop 
 
 
 //****************************
@@ -108,10 +166,8 @@ print_vector("\n\nC vector is\n\n",cs,m);
 print_vector("\n\nS vector is\n\n",sn,m);
 
 
-
-
-
-
+printf("\n\n\n Givens Matrix is :\n");
+print_matrix(g,m,m);
 }// End of main function 
 
 
@@ -155,7 +211,7 @@ void mult_givens(double cs, double sn, int k, double *g)
          g2  =  sn * g[k]+ cs * g[k+1];
           
 	 g[k]=g1;
-	 g[k+2]= g2;
+	 g[k+1]= g2;
 	 return;
 }
 

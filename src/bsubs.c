@@ -24,11 +24,16 @@ double *sn;
 double *h;
 double *y; // starting as a vector and will implement it later for matrix
 double *g;
-double *e;
+double *E;
+double *scal;
 
-int m; //maximum no of inner iterations, mr < size of matrix 
+//int mr; //maximum no of inner iterations, mr < size of matrix 
 //mr = m,
-int restart;
+int restart = 3; 
+int p = 3; //no of rhs 
+//int mr; //no of inner iterations
+int m;
+int n; 
 
 int i;
 int j;
@@ -37,19 +42,29 @@ double temp;
 double h1;
 double h2;
 
+m = restart+p;
+
+
+
+
     printf("Enter number of Rows :");
     scanf("%d",&m);
-    printf("Enter number of Cols :");
+    printf("Enter the number of Cols :");
     scanf("%d",&restart);
 
-cs = ( double * ) malloc ( m * sizeof ( double ) );
-sn = ( double * ) malloc ( m * sizeof ( double ) );
+cs = ( double * ) calloc ( m * sizeof ( double ) );
+sn = ( double * ) calloc ( m * sizeof ( double ) );
 //g = ( double * ) malloc ( ( m + 1 ) * sizeof ( double ) );//rotation matrix
-y = ( double * ) malloc ( ( m + 1 ) * sizeof ( double ) );
-h = (double * ) malloc ((m*restart)* sizeof (double));
-g = (double *) malloc (m*m*sizeof(double)); //Identity matrix
+y = ( double * ) calloc ( ( restart*p) * sizeof ( double ) );
+h = (double * ) calloc ((m*p)* sizeof (double));
+g = (double *) calloc (m*m*sizeof(double)); //Identity matrix
+scal = (double*) calloc (p*p*sizeof(double)); //R factor of QR factorization 
 
-//Declaration of matrix from user 
+
+
+/*****************************************************
+//Declaration of matrix from user
+******************************************************
    printf("\nEnter matrix elements :\n");
     for(i=0;i< m;i++)
     {
@@ -59,8 +74,9 @@ g = (double *) malloc (m*m*sizeof(double)); //Identity matrix
             scanf("%le",&h[i*restart+j]);
         }
     }
-
+*******************************************************/
 //Print the entered matrix
+
 printf("\nThe entered matrix is: \n");
 print_matrix(h,m, restart);
 

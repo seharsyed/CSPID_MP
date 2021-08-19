@@ -1,6 +1,6 @@
-//Copy of ROT1.C
-//trying to convert the lines of code to subroutine
-//need to experiment on multiple files and keep on adding the backward substitution
+//This is the file made ito test the ementation of givens rotation on a small hessenberg matrix
+//I will read a small H matrix then apply the givens rotation on it. Check the same result on Matlab. 
+//This ROT1.C is implementation of C code into givens 
 //
 //
 
@@ -14,9 +14,10 @@
 
 void print_vector(char* pre, double *v, unsigned int size);
 void print_matrix(double *arr, int rows, int cols);
-void rotation(double dx, double dy, double cs, double sn);
+void GeneratePlaneRotation(double dx, double dy, double cs, double sn);
 void mult_givens(double cs, double sn, int k, double *g);
-void ApplyPlaneRotation(double dx, double dy, double cs, double sn);
+
+//void ApplyPlaneRotation(double dx, double dy, double cs, double sn);
 
 int main ()
 {
@@ -85,7 +86,8 @@ print_matrix(g,m,m);
 
 //Starting the rotation here 
 /*********************************************************************************
-//This routine is working but need to understand the role of g 
+//This routine is working but somehow picking up the wrong values in second row
+//One way is to double check and print the values that it picks at each step
 **********************************************************************/
 for (k =0;k<m;k++){
 
@@ -121,8 +123,6 @@ print_vector("\n\n vector Y is\n\n",y ,m);
        3 Implement backward substitution 
 ************************************************************************/
 
-      rotation (h[k*restart+k], h[(k+1)*restart+k], cs[k], sn[k]);
-/*
      temp = sqrt ( h[k*restart+k] * h[k*restart+k] + h[(k+1)*restart+k] * h[(k+1)*restart+k] );
      h1 = h[k*restart+k];
      h2 = h[(k+1)*restart+k];
@@ -146,8 +146,10 @@ print_vector("\n\n vector Y is\n\n",y ,m);
       h[k*restart+k] = cs[k] * h[k*restart+k] - sn[k] * h[(k+1)*restart+k];
 //updted value of h[k*restart+k]
       h[(k+1)*restart+k] = 0.0;
-*/
-      mult_givens ( cs[k], sn[k], k, g);      // this should be the givens matrix 
+      mult_givens ( cs[k], sn[k], k, g);      // this e should be the givens matrix 
+
+      //printf("\n\n\nMatrix after update at last step is :\n");
+    //  print_matrix(h,m,restart);
 
        printf("\n****************************************\n");
       printf("\nEnd of loop\n");
@@ -177,7 +179,7 @@ print_matrix(g,m,m);
 //User Defined Functions
 //______________________________________________________________________________________
 
-void rotation(double dx, double dy, double cs, double sn)
+void GeneratePlaneRotation(double dx, double dy, double cs, double sn)
 {
   double temp;	
   if (dy == 0.0) {

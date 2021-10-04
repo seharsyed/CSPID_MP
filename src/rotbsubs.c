@@ -1,15 +1,13 @@
-//This is the file made ito test the ementation of givens rotation on a small hessenberg matrix
-//I will read a small H matrix then apply the givens rotation on it. Check the same result on Matlab. 
-//This ROT1.C is implementation of C code into givens 
+// Givens Rotation and the subsequent backsubstituition
 //
-//
+
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <math.h>
 #include <string.h>
-
+#include <cblas.h>
 
 
 void print_vector(char* pre, double *v, unsigned int size);
